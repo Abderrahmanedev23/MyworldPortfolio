@@ -93,9 +93,12 @@ const FRAGMENT = {
       float foam = smoothstep(0.75, 0.95, band) * (1.0 - smoothstep(0.0, 4.5, shore));
       foam += 1.0 - smoothstep(-0.2, 0.7, shore);
       col = mix(col, vec3(0.97, 1.0, 1.0), clamp(foam, 0.0, 1.0) * 0.85);
-      // sun glints
-      float glint = step(0.985, cozyHash(floor(vWorldP.xz * 3.0) + floor(uTime * 2.0)));
-      col += glint * 0.35 * (1.0 - uNight);
+      // sun glints: tiny round sparkles that pop in and out
+      vec2 gc = vWorldP.xz * 5.0;
+      float gh = cozyHash(floor(gc) + floor(uTime * 1.5));
+      float gd = length(fract(gc) - 0.5);
+      float glint = step(0.993, gh) * (1.0 - smoothstep(0.05, 0.2, gd));
+      col += glint * 0.6 * (1.0 - uNight);
       diffuseColor.rgb = col;
     }`,
   // x-ray cutout between camera and player (dithered)

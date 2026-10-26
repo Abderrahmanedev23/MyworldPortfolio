@@ -233,6 +233,55 @@ export const audio = {
       case 'bloop':
         tone({ freq: 300, to: 900, decay: 0.15, gain: 0.12 })
         break
+      case 'stroke':
+        burst({ dur: 0.22, gain: 0.14, type: 'lowpass', freq: 1400, sweepTo: 400 })
+        break
+      case 'gull': {
+        // "kee-ow": a squawky falling cry
+        const f = 1300 + Math.random() * 300
+        for (let i = 0; i < (Math.random() < 0.5 ? 2 : 3); i++) {
+          const t0 = t + i * 0.22
+          const o = ctx.createOscillator()
+          const g = ctx.createGain()
+          const bp = ctx.createBiquadFilter()
+          bp.type = 'bandpass'
+          bp.frequency.value = 1800
+          bp.Q.value = 2
+          o.type = 'sawtooth'
+          o.frequency.setValueAtTime(f, t0)
+          o.frequency.exponentialRampToValueAtTime(f * 0.55, t0 + 0.18)
+          env(g, t0, 0.01, (opts.gain ?? 0.05) * (i ? 0.7 : 1), 0.18)
+          o.connect(bp).connect(g).connect(ambienceBus)
+          o.start(t0)
+          o.stop(t0 + 0.25)
+        }
+        break
+      }
+      case 'cast':
+        burst({ dur: 0.35, gain: 0.18, type: 'bandpass', freq: 1800, sweepTo: 600, q: 1.2 })
+        tone({ freq: 900, to: 400, t: t + 0.05, decay: 0.3, gain: 0.03 })
+        break
+      case 'plop':
+        tone({ freq: 500, to: 180, decay: 0.12, gain: 0.18 })
+        burst({ t: t + 0.02, dur: 0.15, gain: 0.08, type: 'lowpass', freq: 1500 })
+        break
+      case 'nibble':
+        tone({ freq: 380, to: 260, decay: 0.07, gain: 0.08 })
+        break
+      case 'bite':
+        burst({ dur: 0.3, gain: 0.3, type: 'lowpass', freq: 2500, sweepTo: 500 })
+        tone({ freq: 1320, decay: 0.12, gain: 0.08, type: 'square' })
+        break
+      case 'reel':
+        for (let i = 0; i < 6; i++) tone({ freq: 2200 + i * 80, t: t + i * 0.05, decay: 0.025, gain: 0.03, type: 'square' })
+        break
+      case 'catch':
+        ;[67, 72, 76, 79, 84].forEach((n, i) => tone({ freq: midi(n), t: t + i * 0.08, decay: 0.3, gain: 0.08, type: 'triangle' }))
+        burst({ t, dur: 0.4, gain: 0.2, type: 'lowpass', freq: 3000, sweepTo: 600 })
+        break
+      case 'fail':
+        ;[64, 60, 55].forEach((n, i) => tone({ freq: midi(n), t: t + i * 0.12, decay: 0.2, gain: 0.07, type: 'triangle' }))
+        break
       case 'whoosh':
         burst({ dur: 0.45, gain: 0.2, type: 'bandpass', freq: 400, sweepTo: 2400, q: 0.8 })
         break

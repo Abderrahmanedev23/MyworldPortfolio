@@ -12,7 +12,9 @@ const registry = new Map()
 /**
  * Register an interactable spot.
  * @param {string} id unique id
- * @param {object} opts { position: [x,y,z], radius, label, onInteract, promptHeight, enabled }
+ * @param {object} opts { position: [x,y,z], radius, label, onInteract, promptHeight, enabled,
+ *   dynamic?: () => [x,y,z] | null  — position recomputed every frame (null = unavailable),
+ *   bias?: number — extra distance so other things nearby win ties }
  */
 export function useInteractable(id, opts) {
   const ref = useRef(opts)
@@ -36,7 +38,7 @@ export function useInteractable(id, opts) {
   }, [id])
   // cache a Vector3 for the position
   if (!ref.current.vec) ref.current.vec = new Vector3()
-  ref.current.vec.set(...opts.position)
+  if (opts.position) ref.current.vec.set(...opts.position)
 }
 
 const tmp = new Vector3()
@@ -50,16 +52,22 @@ export function InteractionManager() {
     for (const entry of registry.values()) {
       const o = entry.opts
       if (o.enabled === false) continue
+      if (o.dynamic) {
+        const at = o.dynamic()
+        if (!at) continue
+        entry.position.set(...at)
+      }
       tmp.copy(entry.position)
       const dx = tmp.x - playerState.position.x
       const dz = tmp.z - playerState.position.z
       const dy = Math.abs(tmp.y - playerState.position.y)
       const d = Math.hypot(dx, dz)
-      if (d < (o.radius ?? 2) && dy < (o.heightRange ?? 2.5) && d < bestDist) {
+      if (d < (o.radius ?? 2) && dy < (o.heightRange ?? 2.5) && d + (o.bias ?? 0) < bestDist) {
         best = entry
-        bestDist = d
+        bestDist = d + (o.bias ?? 0)
       }
     }
+    if (best && nearby?.id === best.id && best.opts.dynamic) nearby.position.copy(best.position)
     if ((best?.id ?? null) !== (nearby?.id ?? null)) {
       if (best) audio.play('prompt')
       setNearby(

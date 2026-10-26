@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Component, Suspense, lazy, useEffect, useState } from 'react'
 import { HUD } from './ui/HUD'
 import { Panel } from './ui/Panel'
 import { Dialogue } from './ui/Dialogue'
@@ -27,6 +27,32 @@ const webgl = (() => {
     return false
   }
 })()
+
+/** If the 3D world ever crashes, offer the classic site instead of a blank screen. */
+class WorldBoundary extends Component {
+  state = { error: null }
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+  componentDidCatch(error) {
+    console.error(error)
+  }
+  render() {
+    if (!this.state.error) return this.props.children
+    return (
+      <div className="boot loading">
+        <div className="boot-inner">
+          <div className="loader-island">🏝️</div>
+          <h1 className="logo small">The island couldn't load</h1>
+          <p className="tip">Your browser had trouble with the 3D world. The classic site has everything too.</p>
+          <a className="btn big" href="#/classic">
+            Open the classic site
+          </a>
+        </div>
+      </div>
+    )
+  }
+}
 
 function useRoute() {
   const [hash, setHash] = useState(window.location.hash)
@@ -83,9 +109,11 @@ function Game() {
 
   return (
     <div className="app">
-      <Suspense fallback={null}>
-        <World />
-      </Suspense>
+      <WorldBoundary>
+        <Suspense fallback={null}>
+          <World />
+        </Suspense>
+      </WorldBoundary>
       {phase === 'playing' && (
         <>
           <HUD />

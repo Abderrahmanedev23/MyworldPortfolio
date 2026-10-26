@@ -9,6 +9,7 @@ export function TouchControls() {
   const nearby = useStore((s) => s.nearby)
   const hidden = useStore((s) => !!s.panel || !!s.menu)
   const dialogue = useStore((s) => !!s.dialogue)
+  const fishing = useStore((s) => !!s.fishing)
   const [knob, setKnob] = useState({ x: 0, y: 0 })
   const base = useRef()
   const pointer = useRef(null)
@@ -56,7 +57,12 @@ export function TouchControls() {
         <button className="round jump" onPointerDown={() => (input.jump = true)} aria-label="Jump">
           ⤒
         </button>
-        <button className={`round action ${nearby ? 'live' : ''}`} onPointerDown={interact} disabled={!nearby} aria-label="Interact">
+        <button
+          className={`round action ${nearby || fishing ? 'live' : ''}`}
+          onPointerDown={interact}
+          disabled={!nearby && !fishing}
+          aria-label="Interact"
+        >
           ✋
         </button>
       </div>

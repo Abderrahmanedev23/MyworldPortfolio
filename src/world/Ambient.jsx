@@ -162,51 +162,6 @@ export function Clouds() {
   )
 }
 
-export function Birds() {
-  const night = useStore((s) => s.night)
-  const group = useRef()
-  const birds = useMemo(() => {
-    const rand = rng(9)
-    return Array.from({ length: 6 }, (_, i) => ({
-      r: 10 + rand() * 18,
-      y: 9 + rand() * 6,
-      speed: 0.25 + rand() * 0.2,
-      phase: (i / 6) * Math.PI * 2,
-      dir: i % 2 ? 1 : -1,
-    }))
-  }, [])
-  useFrame(({ clock }) => {
-    if (!group.current) return
-    const t = clock.elapsedTime
-    group.current.children.forEach((b, i) => {
-      const d = birds[i]
-      const a = d.phase + t * d.speed * d.dir
-      b.position.set(Math.cos(a) * d.r, d.y + Math.sin(t * 0.7 + i) * 0.8, Math.sin(a) * d.r)
-      b.rotation.y = -a + (d.dir > 0 ? Math.PI : 0)
-      const flap = Math.sin(t * 10 + i) * 0.7
-      b.children[0].rotation.z = flap
-      b.children[1].rotation.z = -flap
-    })
-  })
-  if (night) return null
-  return (
-    <group ref={group}>
-      {birds.map((_, i) => (
-        <group key={i}>
-          {[1, -1].map((s) => (
-            <group key={s}>
-              <mesh position={[s * 0.3, 0, 0]}>
-                <boxGeometry args={[0.6, 0.03, 0.22]} />
-                <meshStandardMaterial color="#3a3d55" />
-              </mesh>
-            </group>
-          ))}
-        </group>
-      ))}
-    </group>
-  )
-}
-
 /** Glowing fireflies drifting over the grass at night (they bloom nicely). */
 export function Fireflies({ count = 70 }) {
   const night = useStore((s) => s.night)

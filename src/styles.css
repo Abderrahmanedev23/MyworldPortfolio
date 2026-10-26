@@ -1524,3 +1524,223 @@ kbd {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ---------- fishing ---------- */
+.fish-hint {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--glass);
+  box-shadow: var(--shadow);
+  font: 600 0.95rem var(--display);
+  white-space: nowrap;
+  animation: fade-up 0.4s;
+  pointer-events: none;
+}
+.fish-hint span {
+  font: 700 0.8rem var(--font);
+  color: var(--muted);
+}
+.fish-hint.bite {
+  bottom: 38%;
+  padding: 14px 30px;
+  font-size: 2rem;
+  color: #fff;
+  background: linear-gradient(180deg, #ff6b6b, #e63946);
+  box-shadow: 0 6px 0 #a4161a, 0 16px 40px rgba(230, 57, 70, 0.5);
+  animation: pop 0.2s var(--pop), shake 0.25s 0.2s infinite;
+}
+.bite-alert {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #fff;
+  color: #e63946;
+  font: 700 2.2rem var(--display);
+  box-shadow: 0 6px 0 rgba(42, 34, 54, 0.2), 0 10px 24px rgba(0, 0, 0, 0.25);
+  animation: pop 0.2s var(--pop), shake 0.25s infinite;
+}
+.catch-wrap {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.catch-card {
+  --fish: #4f7cff;
+  position: relative;
+  width: min(360px, 100%);
+  padding: 30px 26px 20px;
+  text-align: center;
+  border-radius: 30px;
+  background: var(--paper);
+  border: 4px solid #fff;
+  box-shadow: 0 10px 0 rgba(42, 34, 54, 0.12), 0 30px 70px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: pop 0.45s var(--pop);
+}
+.catch-rays {
+  position: absolute;
+  left: 50%;
+  top: 70px;
+  width: 520px;
+  height: 520px;
+  margin: -260px 0 0 -260px;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--fish) 22%, transparent) 0 10deg, transparent 10deg 20deg);
+  animation: spin 14s linear infinite;
+  pointer-events: none;
+}
+.catch-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  font-size: 56px;
+  background: #fff;
+  border: 5px solid var(--fish);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  animation: wiggle 1.6s ease-in-out infinite;
+}
+.catch-card .eyebrow,
+.catch-card h2,
+.catch-card p,
+.catch-meta {
+  position: relative;
+}
+.catch-card h2 {
+  margin: 0 0 10px;
+  font-size: 1.9rem;
+}
+.catch-new {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: #e63946;
+  color: #fff;
+  font: 700 0.85rem var(--display);
+  transform: rotate(8deg);
+  animation: pop 0.4s 0.3s var(--pop) both;
+}
+.catch-meta {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.catch-meta span {
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.rarity.r3 {
+  color: #3a86ff;
+}
+.rarity.r4 {
+  color: #9b5de5;
+}
+.rarity.r5 {
+  color: #e0a100;
+}
+.catch-text {
+  margin: 14px 0 6px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.catch-continue {
+  margin: 10px 0 0;
+  font: 600 0.85rem var(--display);
+  color: var(--muted);
+  animation: blink 1.6s ease-in-out infinite;
+}
+.menu-stats.three {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.collection {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+.col-item {
+  --fish: #ccc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 6px;
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+  opacity: 0.6;
+}
+.col-item.got {
+  opacity: 1;
+  box-shadow: inset 0 -4px 0 color-mix(in srgb, var(--fish) 60%, transparent);
+}
+.col-emoji {
+  font-size: 30px;
+  height: 40px;
+  font-family: var(--display);
+  color: var(--muted);
+}
+.col-item b {
+  font: 600 0.85rem var(--display);
+}
+.col-item small {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.credits {
+  padding-left: 18px;
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+.credits li {
+  margin-bottom: 8px;
+}
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(-50%) rotate(-3deg);
+  }
+  50% {
+    transform: translateX(-50%) rotate(3deg);
+  }
+}
+.bite-alert {
+  animation-name: pop, shake-c;
+}
+@keyframes shake-c {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.credits-foot {
+  padding-top: 24px;
+  font-size: 0.8rem;
+}

@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CylinderCollider, RigidBody } from '@react-three/rapier'
-import { Avatar } from '../Avatar'
+import { Character } from '../Character'
 import { Label } from '../Label'
 import { useInteractable } from '../../interaction'
 import { playerState, useStore } from '../../store'
@@ -11,22 +11,24 @@ import { NPCS } from '../layout'
 
 function NPC({ npc }) {
   const visual = useRef()
-  const state = useRef({ anim: 'idle' }).current
+  const state = useRef({ anim: npc.pose ?? 'idle' }).current
   const openDialogue = useStore((s) => s.openDialogue)
   const quality = useStore((s) => s.settings.quality)
   const [x, z] = npc.position
+  const y = npc.y ?? 0
+  const seated = !!npc.pose
 
   useInteractable(npc.id, {
-    position: [x, 0, z],
+    position: [x, y, z],
     radius: 2.2,
     label: `Talk to ${npc.name}`,
-    promptHeight: 2.4,
+    promptHeight: seated ? 1.6 : 2.4,
     onInteract: () => {
       audio.play('open')
       openDialogue({
         npc: { id: npc.id, name: npc.name, emoji: npc.emoji, color: npc.colors.hoodie, voice: npc.voice },
         lines: profile.npcs?.[npc.id] ?? ['Hello there!'],
-        focus: [x, 1.3, z],
+        focus: [x, y + (seated ? 0.8 : 1.3), z],
         focusDistance: 3.6,
       })
     },
@@ -34,24 +36,25 @@ function NPC({ npc }) {
 
   useFrame(() => {
     const talking = useStore.getState().dialogue?.npc.id === npc.id
-    state.anim = talking ? 'wave' : 'idle'
+    state.anim = seated ? npc.pose : talking ? 'cheer' : 'idle'
+    if (seated) return // seated NPCs keep looking out over the water
     const dx = playerState.position.x - x
     const dz = playerState.position.z - z
     const near = dx * dx + dz * dz < 36
-    const target = near ? Math.atan2(dx, dz) : 0
+    const target = near ? Math.atan2(dx, dz) : npc.facing ?? 0
     const r = visual.current.rotation
     r.y += Math.atan2(Math.sin(target - r.y), Math.cos(target - r.y)) * 0.08
   })
 
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, y, z]}>
       <RigidBody type="fixed" colliders={false}>
-        <CylinderCollider args={[0.7, 0.4]} position={[0, 0.7, 0]} />
+        <CylinderCollider args={[seated ? 0.4 : 0.7, 0.4]} position={[0, seated ? 0.4 : 0.7, 0]} />
       </RigidBody>
-      <group ref={visual}>
-        <Avatar colors={npc.colors} state={state} scale={0.95} outline={quality === 'high'} />
+      <group ref={visual} rotation={[0, npc.facing ?? 0, 0]}>
+        <Character model={npc.model} state={state} outline={quality === 'high'} />
       </group>
-      <Label text={`${npc.emoji} ${npc.name}`} size={0.22} billboard position={[0, 2, 0]} />
+      <Label text={`${npc.emoji} ${npc.name}`} size={0.22} billboard position={[0, seated ? 1.5 : 1.95, 0]} />
     </group>
   )
 }

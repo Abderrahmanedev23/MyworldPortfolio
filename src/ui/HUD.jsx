@@ -6,6 +6,7 @@ import { back, toggleMap } from '../input'
 import { audio } from '../audio'
 import { Minimap } from './Minimap'
 import { TouchControls } from './Joystick'
+import { CatchCard, FishingHint } from './Fishing'
 
 const QUESTS = [
   ['about', 'Visit the Cozy House', '🏠'],
@@ -157,6 +158,8 @@ export function HUD() {
         </div>
       )}
       {isTouch && <TouchControls />}
+      <FishingHint />
+      <CatchCard />
       <Toast />
     </div>
   )

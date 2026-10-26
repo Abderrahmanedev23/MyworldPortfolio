@@ -8,6 +8,7 @@
     "Replace this text in src/content/profile.json with your own bio — who you are, what you love building, and what you're looking for next."
   ],
   "avatar": {
+    "model": "player",
     "skin": "#f1c7a1",
     "hair": "#2b1d14",
     "hoodie": "#4f7cff",

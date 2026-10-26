@@ -60,9 +60,9 @@ export function insideRect([x, z], [ox, oz], rotY, hw, hd) {
 }
 
 export const NPCS = [
-  { id: 'npc-plaza', name: 'Mayor Pip', emoji: '🎩', voice: 420, position: [3.5, -3], colors: { skin: '#c68b59', hair: '#d9d9d9', hoodie: '#8e6fd8', pants: '#3a3a3a', shoes: '#5a3e2b', glasses: false } },
-  { id: 'npc-garden', name: 'Gardener Mo', emoji: '🌻', voice: 620, position: [-10.5, 15.5], colors: { skin: '#f3d3b5', hair: '#a8452b', hoodie: '#5aa469', pants: '#6b4f2c', shoes: '#3b2a1a', glasses: false } },
-  { id: 'npc-dock', name: 'Old Fisher', emoji: '🎣', voice: 300, position: [26.5, -3.2], colors: { skin: '#8d5a3b', hair: '#ffffff', hoodie: '#f2c14e', pants: '#2f4858', shoes: '#222', glasses: true } },
+  { id: 'npc-plaza', name: 'Mayor Pip', emoji: '🎩', voice: 420, model: 'mayor', position: [3.5, -3], colors: { skin: '#c68b59', hair: '#d9d9d9', hoodie: '#8e6fd8', pants: '#3a3a3a', shoes: '#5a3e2b', glasses: false } },
+  { id: 'npc-garden', name: 'Gardener Mo', emoji: '🌻', voice: 620, model: 'gardener', position: [-10.5, 15.5], colors: { skin: '#f3d3b5', hair: '#a8452b', hoodie: '#5aa469', pants: '#6b4f2c', shoes: '#3b2a1a', glasses: false } },
+  { id: 'npc-dock', name: 'Old Fisher', emoji: '🎣', voice: 300, model: 'fisher', pose: 'sitFloor', y: 0.12, facing: 0, position: [31.2, 0.62], colors: { skin: '#8d5a3b', hair: '#ffffff', hoodie: '#f2c14e', pants: '#2f4858', shoes: '#222', glasses: true } },
 ]
 
 /** Facing angle (rotation.y) for an object at [x, z] whose front (+z) looks at the plaza. */

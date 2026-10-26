@@ -86,6 +86,9 @@ export function ClassicSite() {
           ))}
         </div>
       </section>
+      <footer className="muted credits-foot">
+        3D characters: KayKit Adventurers by Kay Lousberg (CC0) · Fox by PixelMannen, tomkranis, AsoboStudio &amp; scurest (CC-BY 4.0)
+      </footer>
     </div>
   )
 }

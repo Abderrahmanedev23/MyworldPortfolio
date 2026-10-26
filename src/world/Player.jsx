@@ -2,24 +2,34 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, useRapier } from '@react-three/rapier'
 import { MathUtils } from 'three'
+import { Character } from './Character'
 import { Avatar } from './Avatar'
 import { getMoveInput, input, pollGamepad } from '../input'
 import { isBusy, playerState, useStore } from '../store'
 import { profile } from '../content'
 import { audio } from '../audio'
-import { GRASS_RADIUS, PATHS, SPAWN, distToSegment } from './layout'
+import { GRASS_RADIUS, ISLAND_RADIUS, PATHS, SPAWN, distToSegment } from './layout'
 
 const WALK_SPEED = 3.8
 const RUN_SPEED = 7.5
+const SWIM_SPEED = 2.4
+const SWIM_FAST = 3.8
 const JUMP_VELOCITY = 7.5
 const HALF_HEIGHT = 0.35
 const RADIUS = 0.35
 const FOOT = HALF_HEIGHT + RADIUS
-const IDLE_WAVE_AFTER = 6 // seconds standing still before a friendly wave
+const IDLE_WAVE_AFTER = 8 // seconds standing still before a friendly cheer
 const WAVE_DURATION = 2.2
+
+export const WATER_Y = -0.32 // sea surface
+const SWIM_Y = -0.5 // capsule centre while swimming (head and shoulders above water)
+const SEA_LIMIT = 58 // beyond this the current pushes you back
+const DOCK = { x0: 28, x1: 37, z: 1 } // walkable dock deck
 
 // Rapier's CoefficientCombineRule.Min: zero friction so the capsule never sticks to walls.
 const COMBINE_MIN = 1
+
+const setRig = (rig) => (playerState.rig = rig)
 
 function angleLerp(a, b, t) {
   const d = Math.atan2(Math.sin(b - a), Math.cos(b - a))
@@ -38,6 +48,7 @@ function surfaceAt(x, y, z) {
 export function Player() {
   const body = useRef()
   const visual = useRef()
+  const pose = useRef()
   const { rapier, world } = useRapier()
   const idle = useRef(0)
   const waveUntil = useRef(0)
@@ -45,12 +56,29 @@ export function Player() {
   const wasGrounded = useRef(true)
   const fallSpeed = useRef(0)
   const stepDist = useRef(0)
+  const warned = useRef(false)
 
   // Dev helper: window.__teleport(x, z) jumps the player around the map.
   if (import.meta.env.DEV) {
     window.__teleport = (x, z, y = 2) => (playerState.teleport = [x, y, z])
     window.__player = playerState
     window.__input = input
+  }
+
+  const enterWater = (rb) => {
+    playerState.swimming = true
+    rb.setGravityScale(0, true)
+    audio.play('splash')
+    playerState.splashAt = performance.now()
+    useStore.getState().unlock('swim')
+  }
+  const leaveWater = (rb, x, y, z) => {
+    playerState.swimming = false
+    rb.setGravityScale(1, true)
+    rb.setTranslation({ x, y, z }, true)
+    rb.setLinvel({ x: 0, y: 2.5, z: 0 }, true)
+    audio.play('splash')
+    playerState.splashAt = performance.now()
   }
 
   useFrame((state, delta) => {
@@ -61,11 +89,13 @@ export function Player() {
     const now = state.clock.elapsedTime
     const pos = rb.translation()
     const vel = rb.linvel()
+    const r = Math.hypot(pos.x, pos.z)
 
     if (playerState.teleport) {
       const [x, y, z] = playerState.teleport
       playerState.teleport = null
       playerState.sitAt = null
+      playerState.swimming = false
       rb.setGravityScale(1, true)
       rb.setTranslation({ x, y, z }, true)
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
@@ -73,14 +103,79 @@ export function Player() {
       return
     }
 
-    // Fell into the sea → splash, respawn at the plaza.
-    if (pos.y < -1.2) {
-      audio.play('splash')
-      useStore.getState().unlock('swim')
-      playerState.teleport = [SPAWN[0], SPAWN[1], SPAWN[2]]
+    const busy = isBusy() || playerState.fishing
+    const move = busy ? { f: 0, r: 0, len: 0, run: false } : getMoveInput()
+
+    // Camera-relative movement direction.
+    const yaw = input.cameraYaw
+    const dx = -Math.sin(yaw) * move.f + Math.cos(yaw) * move.r
+    const dz = -Math.cos(yaw) * move.f - Math.sin(yaw) * move.r
+
+    // ---------------- swimming ----------------
+    const onDockSpan = pos.x > DOCK.x0 - 0.5 && pos.x < DOCK.x1 + 0.3
+    if (!playerState.swimming && pos.y < WATER_Y + 0.05 && r > ISLAND_RADIUS - 0.6) enterWater(rb)
+    if (!playerState.swimming && pos.y < -5) {
+      playerState.teleport = [...SPAWN] // fell through the world somehow
       return
     }
+    if (playerState.swimming) {
+      const speed = move.run ? SWIM_FAST : SWIM_SPEED
+      const k = 1 - Math.exp(-4 * dt)
+      let vx = MathUtils.lerp(vel.x, dx * speed, k)
+      let vz = MathUtils.lerp(vel.z, dz * speed, k)
+      // a gentle current pushes you back towards the island far out at sea
+      if (r > SEA_LIMIT) {
+        vx -= (pos.x / r) * 3
+        vz -= (pos.z / r) * 3
+        if (!warned.current) {
+          warned.current = true
+          useStore.getState().showToast({ title: 'Whoa, strong current!', text: "It's safer to swim back to the island.", icon: '🌊' })
+        }
+      }
+      // float at the surface: ease towards swim height (frame-rate independent, never overshoots)
+      const bob = Math.sin(now * 2.2) * 0.035
+      const y = MathUtils.lerp(pos.y, SWIM_Y + bob, 1 - Math.exp(-6 * dt))
+      const vy = 0
+      rb.setTranslation({ x: pos.x, y, z: pos.z }, true)
+      rb.setLinvel({ x: vx, y: vy, z: vz }, true)
+      input.jump = false
 
+      if (move.len > 0.1) playerState.facing = angleLerp(playerState.facing, Math.atan2(dx, dz), 1 - Math.exp(-6 * dt))
+      visual.current.rotation.y = playerState.facing
+
+      // climb out onto the beach or the dock when swimming into them
+      const inward = move.len > 0.1 && dx * -pos.x + dz * -pos.z > 0
+      if (inward && r < ISLAND_RADIUS + 0.6 && !onDockSpan) {
+        const k2 = (ISLAND_RADIUS - 0.7) / r
+        leaveWater(rb, pos.x * k2, FOOT + 0.15, pos.z * k2)
+      } else if (onDockSpan && Math.abs(pos.z) < DOCK.z + 0.9 && move.len > 0.1 && dz * -Math.sign(pos.z) > 0.3) {
+        leaveWater(rb, pos.x, FOOT + 0.3, Math.sign(pos.z) * 0.6)
+      }
+
+      const horiz = Math.hypot(vx, vz)
+      stepDist.current += horiz * dt
+      if (stepDist.current > 1.1) {
+        stepDist.current = 0
+        audio.play('stroke')
+      }
+      playerState.anim = horiz > 0.6 ? 'swim' : 'tread'
+      playerState.animSpeed = horiz > 0.6 ? horiz / SWIM_SPEED : 1
+      playerState.grounded = false
+      playerState.surface = 'water'
+      playerState.position.set(pos.x, y, pos.z)
+      playerState.velocity.set(vx, vy, vz)
+      // lie forward into the stroke, lift the body so the head stays above water
+      const swimTilt = playerState.anim === 'swim' ? 1.05 : 0
+      pose.current.rotation.x = MathUtils.lerp(pose.current.rotation.x, swimTilt, 1 - Math.exp(-6 * dt))
+      pose.current.position.y = MathUtils.lerp(pose.current.position.y, swimTilt ? 0.55 : 0.05, 1 - Math.exp(-6 * dt))
+      pose.current.position.z = MathUtils.lerp(pose.current.position.z, swimTilt ? -0.35 : 0, 1 - Math.exp(-6 * dt))
+      return
+    }
+    pose.current.rotation.x = MathUtils.lerp(pose.current.rotation.x, 0, 1 - Math.exp(-10 * dt))
+    pose.current.position.y = MathUtils.lerp(pose.current.position.y, 0, 1 - Math.exp(-10 * dt))
+    pose.current.position.z = MathUtils.lerp(pose.current.position.z, 0, 1 - Math.exp(-10 * dt))
+
+    // ---------------- on land ----------------
     const ray = new rapier.Ray({ x: pos.x, y: pos.y, z: pos.z }, { x: 0, y: -1, z: 0 })
     const hit = world.castRay(ray, FOOT + 0.15, true, undefined, undefined, undefined, rb)
     const grounded = !!hit && vel.y < 2.5
@@ -96,9 +191,6 @@ export function Player() {
     if (grounded) fallSpeed.current = 0
     wasGrounded.current = grounded
 
-    const busy = isBusy()
-    const move = busy ? { f: 0, r: 0, len: 0, run: false } : getMoveInput()
-
     // Sitting on a bench: stay put until the player moves or jumps.
     if (playerState.sitAt) {
       if (move.len > 0.2 || input.jump) {
@@ -108,7 +200,7 @@ export function Player() {
       } else {
         const s = playerState.sitAt
         rb.setGravityScale(0, true)
-        rb.setTranslation({ x: s.position[0], y: s.position[1] + FOOT, z: s.position[2] }, true)
+        rb.setTranslation({ x: s.position[0], y: s.position[1] + FOOT - 0.12, z: s.position[2] }, true)
         rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
         playerState.anim = 'sit'
         playerState.facing = s.rotation
@@ -118,14 +210,6 @@ export function Player() {
       }
     }
 
-    // Camera-relative movement.
-    const yaw = input.cameraYaw
-    const fx = -Math.sin(yaw)
-    const fz = -Math.cos(yaw)
-    const rx = Math.cos(yaw)
-    const rz = -Math.sin(yaw)
-    const dx = fx * move.f + rx * move.r
-    const dz = fz * move.f + rz * move.r
     const speed = move.run ? RUN_SPEED : WALK_SPEED
     const control = grounded ? 14 : 4
     const k = 1 - Math.exp(-control * dt)
@@ -161,21 +245,31 @@ export function Player() {
       }
     }
 
-    // Animation state.
+    // Animation state (fishing drives its own animations).
     if (input.wave) {
       waveUntil.current = now + WAVE_DURATION
       input.wave = false
     }
     if (move.len > 0.1 || !grounded) idle.current = 0
     else idle.current += dt
-    if (idle.current > IDLE_WAVE_AFTER && (idle.current - IDLE_WAVE_AFTER) % 12 < dt) {
+    if (idle.current > IDLE_WAVE_AFTER && (idle.current - IDLE_WAVE_AFTER) % 14 < dt) {
       waveUntil.current = now + WAVE_DURATION
     }
 
-    if (!grounded && Math.abs(vy) > 1) playerState.anim = 'jump'
+    playerState.animSpeed = horiz > 0.3 ? horiz / (move.run ? RUN_SPEED : WALK_SPEED) : 1
+    if (playerState.fishing) playerState.anim = playerState.fishAnim ?? 'wait'
+    else if (!grounded && Math.abs(vy) > 1) playerState.anim = 'jump'
     else if (move.len > 0.1) playerState.anim = move.run ? 'run' : 'walk'
     else if (now < waveUntil.current) playerState.anim = 'wave'
     else playerState.anim = 'idle'
+
+    // squash on landing, stretch on take-off
+    let sy = 1
+    const sinceLand = now - playerState.landedAt
+    const sinceJump = now - playerState.jumpedAt
+    if (sinceLand < 0.25) sy -= Math.sin((sinceLand / 0.25) * Math.PI) * 0.22 * (playerState.landImpact ?? 0.5)
+    if (sinceJump < 0.22) sy += Math.sin((sinceJump / 0.22) * Math.PI) * 0.1
+    pose.current.scale.set(1 + (1 - sy) * 0.6, sy, 1 + (1 - sy) * 0.6)
 
     playerState.grounded = grounded
     playerState.position.set(pos.x, pos.y, pos.z)
@@ -184,6 +278,7 @@ export function Player() {
 
   const quality = useStore((s) => s.settings.quality)
   const night = useStore((s) => s.night)
+  const model = profile.avatar.model ?? 'player'
   return (
     <RigidBody
       ref={body}
@@ -196,7 +291,13 @@ export function Player() {
     >
       <CapsuleCollider args={[HALF_HEIGHT, RADIUS]} friction={0} frictionCombineRule={COMBINE_MIN} />
       <group ref={visual} position={[0, -FOOT, 0]}>
-        <Avatar colors={profile.avatar} state={playerState} outline={quality !== 'low'} />
+        <group ref={pose}>
+          {model === 'procedural' ? (
+            <Avatar colors={profile.avatar} state={playerState} outline={quality !== 'low'} />
+          ) : (
+            <Character model={model} state={playerState} outline={quality !== 'low'} onReady={setRig} />
+          )}
+        </group>
       </group>
       {/* a soft lantern glow so you never lose your character at night */}
       {night && <pointLight position={[0, 1.2, 0.8]} color="#ffd59a" intensity={5} distance={7} decay={1.8} />}

@@ -7,10 +7,12 @@ import { Player } from './Player'
 import { CameraRig } from './CameraRig'
 import { Pet } from './Pet'
 import { Ball } from './Ball'
-import { Dust } from './Particles'
+import { Dust, WaterFx } from './Particles'
+import { Fishing } from './Fishing'
+import { Seagulls } from './Seagulls'
 import { Effects } from './Effects'
 import { InteractionPrompt } from './Prompt'
-import { Birds, Clouds, DayNight, FallingLeaves, Fireflies, Footprints, ShaderClock } from './Ambient'
+import { Clouds, DayNight, FallingLeaves, Fireflies, Footprints, ShaderClock } from './Ambient'
 import { Plaza } from './zones/Plaza'
 import { House } from './zones/House'
 import { Workshop } from './zones/Workshop'
@@ -86,7 +88,9 @@ export function World() {
         <Dust />
         <Footprints />
         <Clouds />
-        <Birds />
+        <Seagulls />
+        <WaterFx />
+        <Fishing />
         <Fireflies count={high ? 80 : 40} />
         <FallingLeaves count={high ? 26 : 12} />
         <InteractionManager />

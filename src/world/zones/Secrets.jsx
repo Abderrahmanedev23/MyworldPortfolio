@@ -10,40 +10,9 @@ import { audio } from '../../audio'
 import { ZONES, rng } from '../layout'
 import { occlude } from '../shaders'
 
-const CATCHES = [
-  'an old boot 🥾',
-  'a tiny fish 🐟',
-  'a rubber duck 🦆',
-  'a message in a bottle: "hire this dev" 🍾',
-  'a semicolon ;',
-  'a shiny pufferfish 🐡',
-  'absolutely nothing. The fish are on a break.',
-]
-
 function Dock() {
   const [x0] = ZONES.dock
   const length = 9
-  const unlock = useStore((s) => s.unlock)
-  const showToast = useStore((s) => s.showToast)
-  const bobber = useRef()
-  const count = useRef(0)
-  useInteractable('fishing', {
-    position: [x0 + length - 2.6, 0.1, 0],
-    radius: 1.8,
-    label: 'Go fishing',
-    promptHeight: 1.8,
-    onInteract: () => {
-      audio.play('bloop')
-      const first = unlock('fishing')
-      if (!first) {
-        const c = CATCHES[count.current++ % CATCHES.length]
-        showToast({ title: 'You caught…', text: c, icon: '🎣' })
-      }
-    },
-  })
-  useFrame(({ clock }) => {
-    bobber.current.position.y = -0.3 + Math.sin(clock.elapsedTime * 2.5) * 0.05
-  })
   const planks = Array.from({ length: Math.floor(length / 0.5) }, (_, i) => i)
   return (
     <group position={[x0, 0, 0]}>
@@ -70,17 +39,7 @@ function Dock() {
         <boxGeometry args={[0.08, 0.8, 2]} />
         <meshStandardMaterial color="#8a5a3b" />
       </mesh>
-      {/* fishing rod resting at the end + bobber in the water */}
-      <mesh position={[length - 2.4, 0.6, 0.6]} rotation={[0, 0, -0.9]}>
-        <cylinderGeometry args={[0.02, 0.03, 2]} />
-        <meshStandardMaterial color="#333" />
-      </mesh>
-      <mesh ref={bobber} position={[length + 0.2, -0.3, 0.6]}>
-        <sphereGeometry args={[0.1, 8, 8]} />
-        <meshStandardMaterial color="#e63946" />
-      </mesh>
-      <Bench id="bench-dock" position={[length - 3.6, -0.9]} rotation={0} />
-      <Sparkles count={14} scale={[1.5, 0.6, 1.5]} position={[length + 0.2, -0.1, 0.6]} size={3} speed={0.4} color="#ffffff" />
+      <Bench id="bench-dock" position={[length - 4.6, -0.75]} rotation={0} />
     </group>
   )
 }

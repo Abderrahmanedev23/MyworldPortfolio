@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useStore } from '../store'
 import { audio } from '../audio'
-import { secrets } from '../content'
+import { fish, secrets } from '../content'
+import { Collection } from './Fishing'
 
 function Segmented({ value, options, onChange }) {
   return (
@@ -85,7 +86,7 @@ const CONTROLS = [
   ['Move', 'WASD / ZQSD / Arrows', 'Left stick', 'Joystick'],
   ['Run', 'Shift', 'RB / RT', 'Push joystick fully'],
   ['Jump', 'Space', 'A', '⤒ button'],
-  ['Interact / Talk', 'E / Enter', 'X or B', '✋ button'],
+  ['Interact / Talk / Fish', 'E / Enter', 'X or B', '✋ button'],
   ['Wave', 'R', 'Y', '—'],
   ['Camera', 'Drag mouse · Wheel', 'Right stick', 'Drag · Pinch'],
   ['Map', 'M', 'View / Select', '🗺 button'],
@@ -96,6 +97,7 @@ export function PauseMenu() {
   const setMenu = useStore((s) => s.setMenu)
   const achievements = useStore((s) => s.achievements)
   const visited = useStore((s) => s.visited)
+  const collection = useStore((s) => s.collection)
   const resetProgress = useStore((s) => s.resetProgress)
   const [tab, setTab] = useState('home')
   const [confirm, setConfirm] = useState(false)
@@ -110,16 +112,22 @@ export function PauseMenu() {
           <>
             <p className="eyebrow">Paused</p>
             <h2>Take a breather ☕</h2>
-            <div className="menu-stats">
+            <div className="menu-stats three">
               <div>
                 <b>{visited.length}/5</b>
-                <span>places explored</span>
+                <span>places</span>
               </div>
               <div>
                 <b>
                   {achievements.length}/{secrets.length}
                 </b>
-                <span>secrets found</span>
+                <span>secrets</span>
+              </div>
+              <div>
+                <b>
+                  {Object.keys(collection).length}/{fish.length}
+                </b>
+                <span>fish</span>
               </div>
             </div>
             <nav className="menu-list">
@@ -128,6 +136,9 @@ export function PauseMenu() {
               </button>
               <button className="menu-item" onClick={() => setMenu('map')}>
                 🗺 Map & fast travel
+              </button>
+              <button className="menu-item" onClick={() => go('fish')}>
+                🐟 Fish collection
               </button>
               <button className="menu-item" onClick={() => go('settings')}>
                 ⚙ Settings
@@ -138,6 +149,9 @@ export function PauseMenu() {
               <a className="menu-item" href="#/classic">
                 📄 Classic site
               </a>
+              <button className="menu-item" onClick={() => go('credits')}>
+                ❤ Credits
+              </button>
               {confirm ? (
                 <button
                   className="menu-item danger"
@@ -164,6 +178,41 @@ export function PauseMenu() {
             </button>
             <h2>Settings</h2>
             <Settings />
+          </>
+        )}
+        {tab === 'fish' && (
+          <>
+            <button className="back-link" onClick={() => go('home')}>
+              ← Back
+            </button>
+            <h2>Fish collection</h2>
+            <Collection />
+          </>
+        )}
+        {tab === 'credits' && (
+          <>
+            <button className="back-link" onClick={() => go('home')}>
+              ← Back
+            </button>
+            <h2>Credits</h2>
+            <ul className="credits">
+              <li>
+                Characters: <b>KayKit Character Pack: Adventurers</b> by Kay Lousberg (CC0) —{' '}
+                <a href="https://kaylousberg.itch.io/kaykit-adventurers" target="_blank" rel="noreferrer">
+                  kaylousberg.itch.io
+                </a>
+              </li>
+              <li>
+                Fox: <b>Low poly fox</b> by PixelMannen &amp; tomkranis, rigged by AsoboStudio &amp; scurest (CC-BY 4.0) —{' '}
+                <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox" target="_blank" rel="noreferrer">
+                  glTF Sample Assets
+                </a>
+              </li>
+              <li>Everything else (island, shaders, music, sounds) is generated in code.</li>
+              <li>
+                Built with React Three Fiber, Rapier, Drei and postprocessing. Fonts: Fredoka &amp; Nunito.
+              </li>
+            </ul>
           </>
         )}
         {tab === 'controls' && (

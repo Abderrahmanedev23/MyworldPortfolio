@@ -6,6 +6,7 @@ import { audio } from './audio'
 const SAVE_KEY = 'myworld-achievements'
 const SETTINGS_KEY = 'myworld-settings'
 const VISITED_KEY = 'myworld-visited'
+const COLLECTION_KEY = 'myworld-fish'
 export const ZONES = ['about', 'projects', 'skills', 'experience', 'contact']
 
 function load(key, fallback) {
@@ -23,6 +24,14 @@ function loadList(key) {
     return raw ? JSON.parse(raw) : []
   } catch {
     return []
+  }
+}
+
+function loadObj(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? {}
+  } catch {
+    return {}
   }
 }
 
@@ -55,6 +64,10 @@ export const playerState = {
   grounded: true,
   surface: 'grass', // grass | sand | wood | stone
   sitAt: null, // { position: [x,y,z], rotation } while sitting
+  swimming: false,
+  fishing: false, // true while the fishing minigame owns the player
+  fishAnim: null, // animation the fishing minigame wants
+  rig: null, // the player's model (for attaching the fishing rod to the hand)
   teleport: null, // [x, y, z] → applied by the player on the next frame
   landedAt: -1, // clock time of the last landing (for squash, dust, camera bump)
   jumpedAt: -1,
@@ -107,6 +120,19 @@ export const useStore = create((set, get) => ({
   },
   closeDialogue: () => set({ dialogue: null }),
 
+  // fishing minigame (UI side): null | { phase, catch?: { fish, size, isNew } }
+  fishing: null,
+  setFishing: (fishing) => set({ fishing }),
+  collection: loadObj(COLLECTION_KEY),
+  addCatch: (fish, size) => {
+    const c = get().collection
+    const prev = c[fish.id]
+    const next = { ...c, [fish.id]: { count: (prev?.count ?? 0) + 1, best: Math.max(prev?.best ?? 0, size) } }
+    set({ collection: next })
+    save(COLLECTION_KEY, next)
+    return !prev
+  },
+
   // overlays that pause the game
   menu: null, // null | 'pause' | 'map'
   setMenu: (menu) => set({ menu }),
@@ -132,8 +158,9 @@ export const useStore = create((set, get) => ({
     return true
   },
   resetProgress: () => {
-    set({ achievements: [], visited: [] })
+    set({ achievements: [], visited: [], collection: {} })
     save(SAVE_KEY, [])
+    save(COLLECTION_KEY, {})
     save(VISITED_KEY, [])
   },
 
@@ -151,5 +178,7 @@ export const useStore = create((set, get) => ({
 /** Is gameplay blocked by a UI layer (panel, dialogue, menu, title)? */
 export function isBusy() {
   const s = useStore.getState()
-  return s.phase !== 'playing' || !!s.panel || !!s.dialogue || !!s.menu
+  return s.phase !== 'playing' || !!s.panel || !!s.dialogue || !!s.menu || !!s.fishing
 }
+
+if (import.meta.env.DEV && typeof window !== 'undefined') window.__store = useStore

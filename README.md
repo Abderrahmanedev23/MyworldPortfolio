@@ -4,8 +4,8 @@ A small, cozy island in the style of Animal Crossing, where every building is a 
 Walk around as a mini-me, talk to the locals, find the secrets.
 
 Built with **React Three Fiber**, **Rapier** physics, **Drei**, **postprocessing** and **Vite**.
-There are no 3D model or audio files: the world, shaders, music and sound effects are all generated in code,
-so it loads fast and works offline.
+The characters and the fox are small animated glTF models (about 1.4 MB in total). Everything else
+(island, shaders, music and sound effects) is generated in code.
 
 ## Run it
 
@@ -36,7 +36,7 @@ Deploy: import the repo on Vercel (framework preset "Vite"). `vercel.json` is in
 | Move | WASD / ZQSD / arrows | joystick (push fully to run) |
 | Run | Shift | — |
 | Jump | Space | ⤒ button |
-| Interact | E / Enter | ✋ button or tap the prompt |
+| Interact / talk / fish | E / Enter | ✋ button or tap the prompt |
 | Wave | R | — |
 | Camera | drag + scroll wheel | drag + pinch |
 | Map / fast travel | M | 🗺 button |
@@ -57,11 +57,22 @@ Y to wave, Start to pause, View/Select for the map.
 | Radio tower + mailbox (Contact) | north | `profile.json → contact` |
 | Secrets: rooftop star (climb the crates), crystal cave, fishing dock, football goal, falling in the sea, visiting every zone | around | `secrets.json` |
 
+**Things to do**
+- **Swim**: walk off the beach or jump off the dock. Swim back to the sand or the dock to climb out
+  (a current pushes you back if you go too far out).
+- **Fish**: stand on the beach or at the end of the dock and press E. Wait for the nibbles, then press E the
+  moment the bobber goes under. There are 11 catches to collect (some only bite at night); see them under
+  *Pause → Fish collection*.
+- Talk to the locals, kick the ball into the goal, sit on benches, climb to the workshop roof, find the cave.
+
 **Look and feel**
 - Cozy rendering: soft ambient occlusion, bloom, neutral tone mapping, a vignette, procedural environment lighting,
   stylized water with shore foam, wind-blown grass that parts around you, round trees, blossom trees and bushes.
 - Real-time day/night cycle on the visitor's clock: lamps, fireflies, stars, and a lantern glow around the player at night.
-- Particles: dust when running or landing, falling petals, sparkles on undiscovered secrets.
+- Animated characters (KayKit) with blended walk/run/jump/sit/cheer/throw/swim animations and ink outlines.
+- A fox companion that follows you and waits on the beach while you swim.
+- Seagulls that flap, glide and bank, perch on the dock and the chimney, and take off when you get close.
+- Particles: dust, water ripples and splashes, falling petals, fireflies, sparkles on undiscovered secrets.
 - Generative lo-fi music, footsteps that sound different on grass, sand, stone and wood, NPC voice blips, UI sounds.
 
 **Game UI**
@@ -82,6 +93,7 @@ so you never need to touch 3D code to update the portfolio:
 - `skills.json`: `level` from 1 to 5
 - `experience.json`: in chronological order
 - `secrets.json`: titles and texts of the achievements
+- `fish.json`: the fish you can catch (name, emoji, colour, rarity 1–5, size range, `night: true` for night fish)
 
 Zone positions, area names (for zone titles and the map) and NPCs live in `src/world/layout.js`.
 
@@ -91,8 +103,23 @@ Zone positions, area names (for zone titles and the map) and NPCs live in `src/w
 - In dev mode the automatic quality downgrade is off; pick a preset in the pause menu.
 - In dev mode, `window.__teleport(x, z)` moves the player.
 
-## Next steps (art pass)
+### Models
 
-- Replace `src/world/Avatar.jsx` with a Blender/Mixamo model (`useGLTF` + `useAnimations`)
-  driven by the same `playerState.anim` values (`idle | walk | run | jump | wave | sit`).
-- Swap primitive buildings for `.glb` models from Kenney.nl, Quaternius or Poly Pizza (put them in `public/models`).
+The ready-to-use models live in `public/models/`. They're made from the originals by `scripts/build-models.mjs`,
+which removes weapons, keeps only the animations the game uses and compresses everything with meshopt:
+
+```bash
+# put the source .glb files in models-src/ (see the script for where to download them), then:
+node scripts/build-models.mjs
+```
+
+- **Pick a different character**: set `avatar.model` in `profile.json` to `player`, `mayor`, `gardener` or `fisher`,
+  or to `procedural` for the code-built chibi (it uses the `avatar` colours).
+- **Use your own mini-me**: export a rigged `.glb` from Blender (Mixamo animations work), add it to the
+  script or drop it in `public/models/`, and map its clip names in `CLIPS` in `src/world/Character.jsx`.
+
+## Credits
+
+- Characters: [KayKit Character Pack: Adventurers](https://kaylousberg.itch.io/kaykit-adventurers) by Kay Lousberg (CC0).
+- Fox: Low poly fox by PixelMannen & tomkranis, rigged by AsoboStudio & scurest,
+  from [glTF Sample Assets](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Fox) (CC-BY 4.0).

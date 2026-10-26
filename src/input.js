@@ -52,6 +52,7 @@ export function getMoveInput() {
 export function interact() {
   const s = useStore.getState()
   if (s.phase !== 'playing' || s.menu) return
+  if (s.fishing) return window.dispatchEvent(new Event('fish-press'))
   if (s.dialogue) return window.dispatchEvent(new Event('dialogue-advance'))
   if (s.panel) {
     audio.play('close')
@@ -66,6 +67,7 @@ export function back() {
   if (s.phase !== 'playing') return
   audio.play('close')
   if (s.menu) return s.setMenu(null)
+  if (s.fishing) return window.dispatchEvent(new Event('fish-cancel'))
   if (s.dialogue) return s.closeDialogue()
   if (s.panel) return s.closePanel()
   s.setMenu('pause')

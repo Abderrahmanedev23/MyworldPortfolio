@@ -1,0 +1,13 @@
+[
+  { "id": "sardine", "name": "Sardine", "emoji": "🐟", "color": "#9fb8c9", "rarity": 1, "size": [12, 22], "text": "Small, shiny and always in a hurry." },
+  { "id": "bass", "name": "Sea Bass", "emoji": "🐟", "color": "#6e8fa3", "rarity": 1, "size": [30, 70], "text": "A classic. It's at least a C+." },
+  { "id": "boot", "name": "Old Boot", "emoji": "👢", "color": "#8d6e63", "rarity": 1, "size": [25, 30], "text": "Someone out there is missing a boot.", "junk": true },
+  { "id": "clownfish", "name": "Clownfish", "emoji": "🐠", "color": "#ff8c42", "rarity": 2, "size": [6, 11], "text": "Found it!" },
+  { "id": "puffer", "name": "Pufferfish", "emoji": "🐡", "color": "#e9c46a", "rarity": 2, "size": [15, 35], "text": "Please don't squeeze it." },
+  { "id": "squid", "name": "Squid", "emoji": "🦑", "color": "#f4a3b5", "rarity": 2, "size": [25, 60], "text": "Much easier to catch at night.", "night": true },
+  { "id": "tang", "name": "Blue Tang", "emoji": "🐠", "color": "#3a86ff", "rarity": 3, "size": [15, 30], "text": "Just keep swimming." },
+  { "id": "octopus", "name": "Octopus", "emoji": "🐙", "color": "#e76f51", "rarity": 3, "size": [40, 90], "text": "Eight arms, zero bugs. Comes out at night.", "night": true },
+  { "id": "bottle", "name": "Message in a Bottle", "emoji": "🍾", "color": "#7bd389", "rarity": 3, "size": [20, 25], "text": "The note inside reads: \"Hire the person who built this island.\"", "junk": true },
+  { "id": "shark", "name": "Shark", "emoji": "🦈", "color": "#7d8597", "rarity": 4, "size": [150, 320], "text": "That was a very big shadow." },
+  { "id": "koi", "name": "Golden Koi", "emoji": "✨", "color": "#ffd166", "rarity": 5, "size": [40, 65], "text": "Legendary! You should frame this one." }
+]
