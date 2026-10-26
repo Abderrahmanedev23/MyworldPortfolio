@@ -1744,3 +1744,195 @@ kbd {
   padding-top: 24px;
   font-size: 0.8rem;
 }
+.weather-chip {
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: var(--glass);
+  box-shadow: var(--shadow);
+  font: 600 0.8rem var(--display);
+  animation: pop 0.4s var(--pop);
+}
+
+/* ---------- tour ---------- */
+.dialogue.tour {
+  cursor: default;
+}
+.tour-title {
+  margin: 6px 0 0;
+  font-size: 1.3rem;
+}
+.tour .dialogue-text {
+  margin-top: 2px;
+}
+.tour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.tour-actions .btn.next {
+  background: linear-gradient(180deg, #ffb347, #ff8c42);
+  box-shadow: 0 3px 0 #c8642a;
+}
+.tour-keys {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+/* ---------- photo mode ---------- */
+.photo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.photo > * {
+  pointer-events: auto;
+}
+.photo-frame {
+  position: absolute;
+  inset: 0;
+  border: 18px solid #fffdf8;
+  border-bottom-width: 70px;
+  pointer-events: none !important;
+  box-shadow: inset 0 0 0 2px rgba(42, 34, 54, 0.08);
+}
+.photo-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  animation: flash 0.5s ease-out forwards;
+  pointer-events: none !important;
+}
+.photo-top {
+  position: absolute;
+  top: 28px;
+  left: 30px;
+  right: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.photo-badge {
+  padding: 7px 14px;
+  border-radius: 99px;
+  background: var(--ink);
+  color: #fff;
+  font: 600 0.9rem var(--display);
+}
+.photo-help {
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.photo-top .icon-btn {
+  margin-left: auto;
+}
+.photo-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 84px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: calc(100% - 32px);
+  padding: 10px 12px;
+  border-radius: 22px;
+  background: var(--glass);
+  box-shadow: var(--shadow);
+}
+.photo-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip-btn {
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 99px;
+  background: #fff;
+  font: 600 0.82rem var(--display);
+  color: var(--ink-2);
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(42, 34, 54, 0.1);
+}
+.chip-btn.on {
+  background: var(--ink);
+  color: #fff;
+}
+.snap {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 4px solid var(--ink);
+  background: #fff;
+  cursor: pointer;
+}
+.snap span {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #e63946;
+  transition: transform 0.1s;
+}
+.snap:active span {
+  transform: scale(0.85);
+}
+@keyframes flash {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (max-width: 760px) {
+  .photo-bar {
+    left: 12px;
+    right: 12px;
+    bottom: 76px;
+    transform: none;
+    max-width: none;
+    padding: 8px;
+    gap: 8px;
+  }
+  .photo-group {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex: 1;
+    min-width: 0;
+  }
+  .photo-bar .photo-group:first-child {
+    display: none;
+  }
+  .chip-btn {
+    flex: none;
+  }
+  .snap {
+    width: 54px;
+    height: 54px;
+  }
+  .snap span {
+    width: 36px;
+    height: 36px;
+  }
+  .chip-btn span,
+  .photo-help {
+    display: none;
+  }
+}
+.mobile-only {
+  display: none;
+}
+@media (max-width: 760px) {
+  .mobile-only {
+    display: inline-block;
+  }
+}

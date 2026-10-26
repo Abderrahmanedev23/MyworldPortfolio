@@ -10,6 +10,10 @@ import { Ball } from './Ball'
 import { Dust, WaterFx } from './Particles'
 import { Fishing } from './Fishing'
 import { Seagulls } from './Seagulls'
+import { Butterflies, Crabs, Dolphins } from './Animals'
+import { Boat } from './Boat'
+import { Islet } from './zones/Islet'
+import { Rain, Rainbow, WeatherController } from './Weather'
 import { Effects } from './Effects'
 import { InteractionPrompt } from './Prompt'
 import { Clouds, DayNight, FallingLeaves, Fireflies, Footprints, ShaderClock } from './Ambient'
@@ -23,6 +27,7 @@ import { Secrets } from './zones/Secrets'
 import { NPCs } from './zones/NPCs'
 import { AreaTracker, InteractionManager } from '../interaction'
 import { useStore } from '../store'
+import { glRef } from './glRef'
 
 const DPR = { low: [0.75, 1], medium: [1, 1.5], high: [1, 2] }
 const LOWER = { high: 'medium', medium: 'low' }
@@ -43,6 +48,7 @@ function AutoQuality() {
 function Ready() {
   const setReady = useStore((s) => s.setReady)
   const { gl, scene, camera } = useThree()
+  glRef.current = gl
   if (import.meta.env.DEV) window.__three = { gl, scene, camera }
   useEffect(() => {
     let cancelled = false
@@ -64,10 +70,11 @@ export function World() {
     <Canvas
       shadows={quality !== 'low' ? 'soft' : false}
       dpr={DPR[quality]}
-      gl={{ antialias: quality === 'low', powerPreference: 'high-performance', stencil: false }}
+      gl={{ antialias: quality === 'low', powerPreference: 'high-performance', stencil: false, preserveDrawingBuffer: true }}
       camera={{ fov: 45, near: 0.1, far: 600, position: [0, 15, 34] }}
     >
       <DayNight />
+      <WeatherController />
       <ShaderClock />
       {!import.meta.env.DEV && <AutoQuality />}
       <Suspense fallback={null}>
@@ -80,6 +87,7 @@ export function World() {
           <MilestoneRoad />
           <ContactTower />
           <Secrets />
+          <Islet />
           <NPCs />
           <Ball />
           <Player />
@@ -89,10 +97,16 @@ export function World() {
         <Footprints />
         <Clouds />
         <Seagulls />
+        <Butterflies count={high ? 16 : 9} />
+        <Crabs />
+        <Dolphins />
         <WaterFx />
         <Fishing />
+        <Boat />
         <Fireflies count={high ? 80 : 40} />
-        <FallingLeaves count={high ? 26 : 12} />
+        <FallingLeaves count={high ? 70 : 35} />
+        <Rain />
+        <Rainbow />
         <InteractionManager />
         <AreaTracker />
         <InteractionPrompt />

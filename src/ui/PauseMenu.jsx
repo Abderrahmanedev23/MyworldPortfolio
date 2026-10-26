@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { audio } from '../audio'
 import { fish, secrets } from '../content'
 import { Collection } from './Fishing'
+import { startTour } from './Tour'
 
 function Segmented({ value, options, onChange }) {
   return (
@@ -90,6 +91,8 @@ const CONTROLS = [
   ['Wave', 'R', 'Y', '—'],
   ['Camera', 'Drag mouse · Wheel', 'Right stick', 'Drag · Pinch'],
   ['Map', 'M', 'View / Select', '🗺 button'],
+  ['Photo mode', 'C', '—', '📷 button'],
+  ['Row the boat', 'W / S row · A / D steer', 'Left stick', 'Joystick'],
   ['Pause', 'Esc / P', 'Start', '⏸ button'],
 ]
 
@@ -136,6 +139,18 @@ export function PauseMenu() {
               </button>
               <button className="menu-item" onClick={() => setMenu('map')}>
                 🗺 Map & fast travel
+              </button>
+              <button className="menu-item" onClick={startTour}>
+                🧭 Guided tour
+              </button>
+              <button
+                className="menu-item"
+                onClick={() => {
+                  setMenu(null)
+                  useStore.getState().setPhoto(true)
+                }}
+              >
+                📷 Photo mode
               </button>
               <button className="menu-item" onClick={() => go('fish')}>
                 🐟 Fish collection

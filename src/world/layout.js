@@ -6,6 +6,11 @@ export const GRASS_RADIUS = 26
 
 export const SPAWN = [0, 2, 7.5]
 
+// A tiny secret islet far out at sea (reach it by boat or a long swim).
+export const ISLET = { pos: [-46, -44], r: 6 }
+// Where the rowing boat is moored, alongside the dock.
+export const BOAT_MOORING = { pos: [33.5, -2.4], heading: Math.PI / 2 }
+
 export const ZONES = {
   plaza: [0, 0],
   house: [-15, -10],
@@ -47,6 +52,7 @@ export const AREAS = [
   { id: 'tower', name: 'Radio Hill', sub: 'Contact', icon: '📡', pos: [0, -22], r: 5.5, spawn: [0, -16.5] },
   { id: 'field', name: 'Kickabout Field', sub: 'Score a goal!', icon: '⚽', pos: [17, 4], r: 5, spawn: [12.5, 4] },
   { id: 'dock', name: 'Old Dock', sub: 'Gone fishing', icon: '🎣', pos: [33, 0], r: 5, spawn: [27.5, 0] },
+  { id: 'islet', name: 'Treasure Islet', sub: 'Far, far away', icon: '🏴‍☠️', pos: [-46, -44], r: 7.5, spawn: [-43.5, -41.5], secret: 'treasure' },
   { id: 'cave', name: 'Crystal Cave', sub: 'A hidden place', icon: '💎', pos: [-21, 19], r: 3.5, spawn: [-17.5, 16.5], secret: 'cave' },
 ]
 
@@ -59,10 +65,49 @@ export function insideRect([x, z], [ox, oz], rotY, hw, hd) {
   return Math.abs(dx * c - dz * s) < hw && Math.abs(dx * s + dz * c) < hd
 }
 
+// NPCs. `route` = waypoints they stroll between (pausing a moment at each);
+// `pose` = a fixed pose instead (e.g. sitting). Colours are used for the dialogue portrait.
+const gardenRoute = [
+  [-4.6, 4.6],
+  [4.6, 4.6],
+  [4.6, -4.6],
+  [-4.6, -4.6],
+].map(([x, z]) => {
+  const w = toWorld([x, 0, z], [-15, 11], Math.atan2(15, -11))
+  return [w[0], w[2]]
+})
+const CAVE_ANGLE = Math.atan2(19, -21)
+const beachLap = Array.from({ length: 32 }, (_, i) => {
+  const a = (i / 32) * Math.PI * 2
+  // swing wide around the hidden cave
+  const nearCave = Math.abs(Math.atan2(Math.sin(a - CAVE_ANGLE), Math.cos(a - CAVE_ANGLE))) < 0.22
+  const r = nearCave ? 31.4 : 29.2
+  return [Math.cos(a) * r, Math.sin(a) * r]
+})
+
 export const NPCS = [
-  { id: 'npc-plaza', name: 'Mayor Pip', emoji: '🎩', voice: 420, model: 'mayor', position: [3.5, -3], colors: { skin: '#c68b59', hair: '#d9d9d9', hoodie: '#8e6fd8', pants: '#3a3a3a', shoes: '#5a3e2b', glasses: false } },
-  { id: 'npc-garden', name: 'Gardener Mo', emoji: '🌻', voice: 620, model: 'gardener', position: [-10.5, 15.5], colors: { skin: '#f3d3b5', hair: '#a8452b', hoodie: '#5aa469', pants: '#6b4f2c', shoes: '#3b2a1a', glasses: false } },
-  { id: 'npc-dock', name: 'Old Fisher', emoji: '🎣', voice: 300, model: 'fisher', pose: 'sitFloor', y: 0.12, facing: 0, position: [31.2, 0.62], colors: { skin: '#8d5a3b', hair: '#ffffff', hoodie: '#f2c14e', pants: '#2f4858', shoes: '#222', glasses: true } },
+  {
+    id: 'npc-plaza',
+    name: 'Mayor Pip',
+    emoji: '🎩',
+    voice: 420,
+    model: 'mayor',
+    position: [3.5, -3],
+    route: [
+      [3.5, -3],
+      [4.8, 0.4],
+      [1.6, -4.8],
+      [-2.4, -4.7],
+      [-4.8, -0.4],
+      [-2.4, -4.7],
+      [1.6, -4.8],
+    ],
+    speed: 1.1,
+    colors: { hoodie: '#8e6fd8' },
+  },
+  { id: 'npc-garden', name: 'Gardener Mo', emoji: '🌻', voice: 620, model: 'gardener', position: gardenRoute[0], route: gardenRoute, speed: 0.9, colors: { hoodie: '#5aa469' } },
+  { id: 'npc-jogger', name: 'Sam the Jogger', emoji: '👟', voice: 540, model: 'jogger', position: beachLap[0], route: beachLap, speed: 3.4, run: true, noPause: true, colors: { hoodie: '#ef476f' } },
+  { id: 'npc-dock', name: 'Old Fisher', emoji: '🎣', voice: 300, model: 'fisher', pose: 'sitFloor', y: 0.12, facing: 0, position: [31.2, 0.62], colors: { hoodie: '#f2c14e' } },
 ]
 
 /** Facing angle (rotation.y) for an object at [x, z] whose front (+z) looks at the plaza. */

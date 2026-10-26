@@ -28,7 +28,7 @@ const CHARACTER_ANIMS = [
   'Use_Item',
   'PickUp',
 ]
-const NPC_ANIMS = ['Idle', 'Cheer', 'Interact', 'Sit_Chair_Idle', 'Sit_Floor_Idle']
+const NPC_ANIMS = ['Idle', 'Cheer', 'Interact', 'Walking_A', 'Sit_Chair_Idle', 'Sit_Floor_Idle']
 
 const MODELS = [
   {
@@ -54,6 +54,12 @@ const MODELS = [
     out: 'fisher.glb',
     remove: ['1H_Axe_Offhand', 'Barbarian_Round_Shield', '1H_Axe', '2H_Axe', 'Barbarian_Cape'],
     anims: NPC_ANIMS,
+  },
+  {
+    src: 'Rogue.glb',
+    out: 'jogger.glb',
+    remove: ['Knife_Offhand', '1H_Crossbow', '2H_Crossbow', 'Knife', 'Throwable', 'Rogue_Cape'],
+    anims: ['Idle', 'Cheer', 'Running_A', 'Walking_A'],
   },
   { src: 'Fox.glb', out: 'fox.glb', remove: [], anims: ['Survey', 'Walk', 'Run'] },
 ]

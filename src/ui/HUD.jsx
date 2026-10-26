@@ -89,6 +89,24 @@ function ZoneTitle() {
   )
 }
 
+const WEATHER = {
+  clear: ['☀️', 'Sunny'],
+  rain: ['🌧️', 'Rainy · rare fish bite'],
+  blossom: ['🌸', 'Blossom breeze'],
+}
+
+function WeatherChip() {
+  const weather = useStore((s) => s.weather)
+  const night = useStore((s) => s.night)
+  const rainbow = useStore((s) => s.rainbow)
+  const [icon, label] = weather === 'clear' && night ? ['🌙', 'Clear night'] : rainbow && weather === 'clear' ? ['🌈', 'Rainbow!'] : WEATHER[weather]
+  return (
+    <div className="weather-chip" key={weather + rainbow}>
+      <span>{icon}</span> {label}
+    </div>
+  )
+}
+
 function Toast() {
   const toast = useStore((s) => s.toast)
   const hideToast = useStore((s) => s.hideToast)
@@ -106,6 +124,16 @@ function Toast() {
         {toast.kind === 'achievement' && <b>{toast.title}</b>}
         <p>{toast.text}</p>
       </div>
+    </div>
+  )
+}
+
+function BoatHint() {
+  const boating = useStore((s) => s.boating)
+  if (!boating) return null
+  return (
+    <div className="fish-hint">
+      ⛵ {isTouch ? 'Joystick up/down to row, left/right to steer · ✋ to get out' : 'W / S row · A / D steer · E get out near land'}
     </div>
   )
 }
@@ -142,10 +170,21 @@ export function HUD() {
           >
             {settings.muted ? '🔇' : '🔊'}
           </button>
+          <button
+            className="icon-btn"
+            onClick={() => {
+              audio.play('open')
+              useStore.getState().setPhoto(true)
+            }}
+            title="Photo mode (C)"
+          >
+            📷
+          </button>
           <button className="icon-btn" onClick={back} title="Pause (Esc)">
             ⏸
           </button>
         </div>
+        <WeatherChip />
         <a className="classic-link" href="#/classic">
           Classic site →
         </a>
@@ -153,12 +192,13 @@ export function HUD() {
       <ZoneTitle />
       {hint && !isTouch && (
         <div className="hint">
-          <kbd>WASD</kbd> walk <kbd>Shift</kbd> run <kbd>Space</kbd> jump <kbd>E</kbd> interact <kbd>M</kbd> map <kbd>Esc</kbd>{' '}
-          pause
+          <kbd>WASD</kbd> walk <kbd>Shift</kbd> run <kbd>Space</kbd> jump <kbd>E</kbd> interact <kbd>M</kbd> map <kbd>C</kbd> photo{' '}
+          <kbd>Esc</kbd> pause
         </div>
       )}
       {isTouch && <TouchControls />}
       <FishingHint />
+      <BoatHint />
       <CatchCard />
       <Toast />
     </div>

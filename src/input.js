@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useStore } from './store'
+import { playerState, useStore } from './store'
 import { audio } from './audio'
 
 // Shared input state written by keyboard, gamepad and the on-screen joystick,
@@ -53,6 +53,8 @@ export function interact() {
   const s = useStore.getState()
   if (s.phase !== 'playing' || s.menu) return
   if (s.fishing) return window.dispatchEvent(new Event('fish-press'))
+  if (s.tour && !s.panel) return window.dispatchEvent(new Event('tour-next'))
+  if (playerState.boating && !s.panel && !s.dialogue) return window.dispatchEvent(new Event('boat-exit'))
   if (s.dialogue) return window.dispatchEvent(new Event('dialogue-advance'))
   if (s.panel) {
     audio.play('close')
@@ -68,6 +70,8 @@ export function back() {
   audio.play('close')
   if (s.menu) return s.setMenu(null)
   if (s.fishing) return window.dispatchEvent(new Event('fish-cancel'))
+  if (s.photo) return s.setPhoto(false)
+  if (s.tour && !s.panel) return s.setTour(null)
   if (s.dialogue) return s.closeDialogue()
   if (s.panel) return s.closePanel()
   s.setMenu('pause')
@@ -127,6 +131,11 @@ export function useKeyboard() {
       }
       if (e.code === 'Escape' || e.code === 'KeyP') return back()
       if (e.code === 'KeyM' && !e.repeat) return toggleMap()
+      if (e.code === 'KeyC' && !e.repeat && !s.menu && !s.tour) {
+        audio.play(s.photo ? 'close' : 'open')
+        if (s.photo) playerState.photoPose = null
+        return s.setPhoto(!s.photo)
+      }
       if (e.code === 'KeyE' || e.code === 'Enter') {
         if (!e.repeat) interact()
         return

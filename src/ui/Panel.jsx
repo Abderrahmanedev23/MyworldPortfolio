@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore, isTouch } from '../store'
 import { experience, profile, projects, skills } from '../content'
 import { audio } from '../audio'
+import { startTour } from './Tour'
 
 const HEADERS = {
   about: ['🏠', '#ff8c6b'],
@@ -224,6 +225,9 @@ function Body({ panel }) {
           <p className="eyebrow">Welcome</p>
           <h2>{profile.name}'s World</h2>
           <p className="lead">{profile.tagline}</p>
+          <button className="btn" onClick={startTour}>
+            🧭 Take the guided tour
+          </button>
           <ul className="howto">
             <li>🏠 <b>House</b> (north-west): about me</li>
             <li>🔧 <b>Workshop</b> (north-east): projects</li>

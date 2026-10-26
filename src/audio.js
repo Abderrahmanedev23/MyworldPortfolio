@@ -7,6 +7,8 @@ let noise = null
 let musicTimer = null
 let chirpTimer = null
 let night = false
+let rainGain = null
+let rainWanted = false
 let volumes = { music: 0.45, sfx: 0.8, muted: false }
 
 const now = () => ctx.currentTime
@@ -168,6 +170,7 @@ export const audio = {
     startAmbience()
     nextTime = now() + 0.2
     musicTimer = setInterval(scheduleMusic, 100)
+    if (rainWanted) this.setRain(true)
   },
   setVolumes(v) {
     volumes = { ...volumes, ...v }
@@ -175,6 +178,27 @@ export const audio = {
   },
   setNight(v) {
     night = v
+  },
+  /** Soft rain loop, faded in and out. */
+  setRain(on) {
+    rainWanted = on
+    if (!ctx) return
+    if (!rainGain) {
+      const src = ctx.createBufferSource()
+      src.buffer = noise
+      src.loop = true
+      const hp = ctx.createBiquadFilter()
+      hp.type = 'highpass'
+      hp.frequency.value = 900
+      const lp = ctx.createBiquadFilter()
+      lp.type = 'lowpass'
+      lp.frequency.value = 6000
+      rainGain = ctx.createGain()
+      rainGain.gain.value = 0
+      src.connect(hp).connect(lp).connect(rainGain).connect(ambienceBus)
+      src.start()
+    }
+    rainGain.gain.setTargetAtTime(on ? 0.22 : 0, now(), 1.5)
   },
   get ready() {
     return !!ctx && ctx.state === 'running'
@@ -281,6 +305,21 @@ export const audio = {
         break
       case 'fail':
         ;[64, 60, 55].forEach((n, i) => tone({ freq: midi(n), t: t + i * 0.12, decay: 0.2, gain: 0.07, type: 'triangle' }))
+        break
+      case 'shutter':
+        burst({ dur: 0.05, gain: 0.25, type: 'highpass', freq: 3000 })
+        burst({ t: t + 0.07, dur: 0.06, gain: 0.2, type: 'highpass', freq: 2500 })
+        break
+      case 'dolphin':
+        tone({ freq: 2400, to: 3600, decay: 0.12, gain: 0.03 })
+        tone({ freq: 3000, to: 2200, t: t + 0.13, decay: 0.1, gain: 0.025 })
+        break
+      case 'oar':
+        burst({ dur: 0.3, gain: 0.12, type: 'lowpass', freq: 1100, sweepTo: 350 })
+        break
+      case 'chest':
+        tone({ freq: 220, to: 140, decay: 0.2, gain: 0.12, type: 'triangle' })
+        ;[72, 76, 79, 83, 86].forEach((n, i) => tone({ freq: midi(n), t: t + 0.2 + i * 0.07, decay: 0.4, gain: 0.07, type: 'triangle' }))
         break
       case 'whoosh':
         burst({ dur: 0.45, gain: 0.2, type: 'bandpass', freq: 400, sweepTo: 2400, q: 0.8 })

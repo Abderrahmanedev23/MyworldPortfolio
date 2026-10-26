@@ -47,6 +47,10 @@ export function InteractionManager() {
   useFrame(() => {
     const { nearby, setNearby } = useStore.getState()
     if (isBusy()) return
+    if (playerState.boating) {
+      if (nearby) setNearby(null)
+      return
+    }
     let best = null
     let bestDist = Infinity
     for (const entry of registry.values()) {

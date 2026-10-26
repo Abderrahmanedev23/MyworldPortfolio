@@ -53,7 +53,7 @@
     "npc-plaza": [
       "Oh, a visitor! Welcome to Abderrahmane's World!",
       "Every building here tells a piece of their story. The Workshop up north-east has all the projects.",
-      "Press M to open the map. You can fast-travel anywhere on the island!"
+      "Press M to open the map, or ask me for a guided tour at the sign!"
     ],
     "npc-garden": [
       "Shhh... the plants are growing.",
@@ -64,6 +64,11 @@
       "Ahoy. The fish are picky today.",
       "Try the end of the dock if you fancy a catch.",
       "I heard there's a crystal hidden somewhere behind the trees in the south-west..."
+    ],
+    "npc-jogger": [
+      "Oh hey! I'm on lap number... I lost count.",
+      "Fun fact: Abderrahmane built this whole island in code. Even the waves!",
+      "Have you tried rowing the little boat at the dock? Rumour says there's an island out there with treasure."
     ]
   }
 }

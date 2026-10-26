@@ -83,6 +83,9 @@ const FRAGMENT = {
       vec3 deep = vec3(0.09, 0.32, 0.55);
       vec3 col = mix(shallow, mid, smoothstep(32.0, 40.0, r));
       col = mix(col, deep, smoothstep(40.0, 85.0, r));
+      // shallows + foam around the little treasure islet
+      float ri = length(vWorldP.xz - vec2(-46.0, -44.0));
+      col = mix(shallow, col, smoothstep(6.5, 12.0, ri));
       // drifting caustic-like streaks
       float n = cozyNoise(vWorldP.xz * 0.35 + vec2(uTime * 0.12, uTime * 0.05));
       float n2 = cozyNoise(vWorldP.xz * 0.8 - vec2(uTime * 0.1, 0.0));

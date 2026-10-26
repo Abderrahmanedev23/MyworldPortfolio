@@ -1,0 +1,9 @@
+[
+  { "area": "plaza", "title": "Welcome!", "text": "Hi, I'm Mayor Pip! Let me show you around Abderrahmane's island. Every place here is a piece of their portfolio. It only takes a minute." },
+  { "area": "house", "title": "The Cozy House", "text": "This is where Abderrahmane lives. Inside you'll find their story, hobbies and what they're looking for next.", "open": { "kind": "about", "label": "Read About me" } },
+  { "area": "workshop", "title": "The Workshop", "text": "Every booth out front is a project, with screenshots, links and the tech behind it.", "open": { "kind": "project", "data": 0, "label": "See the projects" } },
+  { "area": "garden", "title": "The Skill Garden", "text": "Each plant is a skill. The taller it grows, the more it's been practised.", "open": { "kind": "skills", "label": "See all skills" } },
+  { "area": "road", "title": "Memory Lane", "text": "Follow the signposts to walk through the journey so far: studies, jobs and milestones.", "open": { "kind": "milestone", "data": 0, "label": "Open the timeline" } },
+  { "area": "tower", "title": "Radio Hill", "text": "Want to get in touch? Drop a letter in the mailbox and it goes straight to Abderrahmane's inbox.", "open": { "kind": "contact", "label": "Contact" } },
+  { "area": "dock", "title": "The Old Dock", "text": "Last stop! Fish from the end of the dock, take the boat out, or just enjoy the view. There are secrets hidden all over the island. Have fun exploring!" }
+]

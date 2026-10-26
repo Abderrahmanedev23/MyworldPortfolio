@@ -63,11 +63,20 @@ Y to wave, Start to pause, View/Select for the map.
 - **Fish**: stand on the beach or at the end of the dock and press E. Wait for the nibbles, then press E the
   moment the bobber goes under. There are 11 catches to collect (some only bite at night); see them under
   *Pause → Fish collection*.
-- Talk to the locals, kick the ball into the goal, sit on benches, climb to the workshop roof, find the cave.
+- **Row the boat** moored at the dock (W/S to row, A/D to steer, E to get out near land). Far out to the south-west
+  there's a **secret islet** with a treasure chest.
+- **Guided tour**: Mayor Pip walks recruiters through every zone in a minute (title screen, welcome sign or pause menu).
+  The stops are in `src/content/tour.json`.
+- **Photo mode** (C or 📷): free camera, filters, poses and a polaroid frame. The photo downloads as a PNG.
+- Talk to the locals (the mayor and gardener stroll around, Sam jogs laps of the beach), kick the ball into the goal,
+  sit on benches, climb to the workshop roof, find the cave.
 
 **Look and feel**
 - Cozy rendering: soft ambient occlusion, bloom, neutral tone mapping, a vignette, procedural environment lighting,
   stylized water with shore foam, wind-blown grass that parts around you, round trees, blossom trees and bushes.
+- Weather that changes every few minutes: rain (rare fish bite more), a rainbow afterwards, cherry-blossom breezes.
+- Butterflies, crabs that dig in when you get close, dolphins leaping offshore.
+- Workshop screens show a scrolling mock website for each project, or its real `image` from `projects.json`.
 - Real-time day/night cycle on the visitor's clock: lamps, fireflies, stars, and a lantern glow around the player at night.
 - Animated characters (KayKit) with blended walk/run/jump/sit/cheer/throw/swim animations and ink outlines.
 - A fox companion that follows you and waits on the beach while you swim.
@@ -99,7 +108,7 @@ Zone positions, area names (for zone titles and the map) and NPCs live in `src/w
 
 ### Testing tips
 
-- `?hour=21` in the URL forces the time of day.
+- `?hour=21` in the URL forces the time of day, `?weather=rain` (or `clear` / `blossom`) the weather.
 - In dev mode the automatic quality downgrade is off; pick a preset in the pause menu.
 - In dev mode, `window.__teleport(x, z)` moves the player.
 

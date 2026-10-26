@@ -9,7 +9,7 @@ export function TouchControls() {
   const nearby = useStore((s) => s.nearby)
   const hidden = useStore((s) => !!s.panel || !!s.menu)
   const dialogue = useStore((s) => !!s.dialogue)
-  const fishing = useStore((s) => !!s.fishing)
+  const fishing = useStore((s) => !!s.fishing || s.boating)
   const [knob, setKnob] = useState({ x: 0, y: 0 })
   const base = useRef()
   const pointer = useRef(null)

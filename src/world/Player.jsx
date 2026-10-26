@@ -8,7 +8,7 @@ import { getMoveInput, input, pollGamepad } from '../input'
 import { isBusy, playerState, useStore } from '../store'
 import { profile } from '../content'
 import { audio } from '../audio'
-import { GRASS_RADIUS, ISLAND_RADIUS, PATHS, SPAWN, distToSegment } from './layout'
+import { GRASS_RADIUS, ISLAND_RADIUS, ISLET, PATHS, SPAWN, distToSegment } from './layout'
 
 const WALK_SPEED = 3.8
 const RUN_SPEED = 7.5
@@ -23,7 +23,7 @@ const WAVE_DURATION = 2.2
 
 export const WATER_Y = -0.32 // sea surface
 const SWIM_Y = -0.5 // capsule centre while swimming (head and shoulders above water)
-const SEA_LIMIT = 58 // beyond this the current pushes you back
+const SEA_LIMIT = 75 // beyond this the current pushes you back
 const DOCK = { x0: 28, x1: 37, z: 1 } // walkable dock deck
 
 // Rapier's CoefficientCombineRule.Min: zero friction so the capsule never sticks to walls.
@@ -96,10 +96,31 @@ export function Player() {
       playerState.teleport = null
       playerState.sitAt = null
       playerState.swimming = false
+      if (playerState.boating) {
+        playerState.boating = false
+        useStore.getState().setBoating(false)
+      }
       rb.setGravityScale(1, true)
       rb.setTranslation({ x, y, z }, true)
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
       playerState.position.set(x, y, z)
+      return
+    }
+
+    // ---------------- in the rowing boat ----------------
+    if (playerState.boating && playerState.boatSeat) {
+      const [sx, sy, sz] = playerState.boatSeat
+      rb.setGravityScale(0, true)
+      rb.setTranslation({ x: sx, y: sy + FOOT - 0.32, z: sz }, true)
+      rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      playerState.swimming = false
+      playerState.grounded = false
+      playerState.anim = 'sit'
+      playerState.facing = playerState.boatHeading
+      visual.current.rotation.y = playerState.facing
+      pose.current.rotation.x = 0
+      pose.current.position.set(0, 0, 0)
+      playerState.position.set(sx, sy + FOOT - 0.32, sz)
       return
     }
 
@@ -145,7 +166,14 @@ export function Player() {
 
       // climb out onto the beach or the dock when swimming into them
       const inward = move.len > 0.1 && dx * -pos.x + dz * -pos.z > 0
-      if (inward && r < ISLAND_RADIUS + 0.6 && !onDockSpan) {
+      const ix = pos.x - ISLET.pos[0]
+      const iz = pos.z - ISLET.pos[1]
+      const di = Math.hypot(ix, iz)
+      const towardIslet = move.len > 0.1 && dx * -ix + dz * -iz > 0
+      if (towardIslet && di < ISLET.r + 0.6) {
+        const k = (ISLET.r - 0.8) / di
+        leaveWater(rb, ISLET.pos[0] + ix * k, FOOT + 0.15, ISLET.pos[1] + iz * k)
+      } else if (inward && r < ISLAND_RADIUS + 0.6 && !onDockSpan) {
         const k2 = (ISLAND_RADIUS - 0.7) / r
         leaveWater(rb, pos.x * k2, FOOT + 0.15, pos.z * k2)
       } else if (onDockSpan && Math.abs(pos.z) < DOCK.z + 0.9 && move.len > 0.1 && dz * -Math.sign(pos.z) > 0.3) {
@@ -258,6 +286,7 @@ export function Player() {
 
     playerState.animSpeed = horiz > 0.3 ? horiz / (move.run ? RUN_SPEED : WALK_SPEED) : 1
     if (playerState.fishing) playerState.anim = playerState.fishAnim ?? 'wait'
+    else if (useStore.getState().photo && playerState.photoPose) playerState.anim = playerState.photoPose
     else if (!grounded && Math.abs(vy) > 1) playerState.anim = 'jump'
     else if (move.len > 0.1) playerState.anim = move.run ? 'run' : 'walk'
     else if (now < waveUntil.current) playerState.anim = 'wave'

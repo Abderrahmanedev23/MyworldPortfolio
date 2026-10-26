@@ -26,6 +26,7 @@ function sunFor(hour) {
 const DAY_SKY = new Color('#a9dcff')
 const DUSK_SKY = new Color('#ffb08a')
 const NIGHT_SKY = new Color('#0e1433')
+const RAIN_SKY = new Color('#8d99a8')
 
 /** Updates the shared shader uniforms (time, player position, night) once per frame. */
 export function ShaderClock() {
@@ -42,6 +43,7 @@ export function DayNight() {
   const light = useRef()
   const setNight = useStore((s) => s.setNight)
   const quality = useStore((s) => s.settings.quality)
+  const raining = useStore((s) => s.weather === 'rain')
   const scene = useThree((s) => s.scene)
   useEffect(() => {
     const id = setInterval(() => setHour(currentHour()), 60_000)
@@ -57,10 +59,11 @@ export function DayNight() {
   }, [night, setNight])
 
   const dusk = 1 - Math.abs(daylight - 0.5) * 2 // peaks around sunrise / sunset
-  const skyColor = useMemo(
-    () => NIGHT_SKY.clone().lerp(DAY_SKY, daylight).lerp(DUSK_SKY, dusk * 0.35),
-    [daylight, dusk],
-  )
+  const skyColor = useMemo(() => {
+    const c = NIGHT_SKY.clone().lerp(DAY_SKY, daylight).lerp(DUSK_SKY, dusk * 0.35)
+    return raining ? c.lerp(night ? NIGHT_SKY : RAIN_SKY, 0.75) : c
+  }, [daylight, dusk, raining, night])
+  const dim = raining ? 0.45 : 1
   useEffect(() => {
     scene.environmentIntensity = night ? 0.25 : 0.55 + daylight * 0.45
   }, [scene, night, daylight])
@@ -82,9 +85,9 @@ export function DayNight() {
   return (
     <>
       <color attach="background" args={[skyColor]} />
-      <fog attach="fog" args={[skyColor, 55, 170]} />
-      {!night && <Sky distance={450} sunPosition={dir.toArray()} turbidity={2.2} rayleigh={2.2} mieCoefficient={0.004} mieDirectionalG={0.8} />}
-      {daylight < 0.5 && <Stars radius={140} depth={40} count={night ? 3000 : 800} factor={4} fade speed={0.4} />}
+      <fog attach="fog" args={[skyColor, raining ? 30 : 55, raining ? 110 : 170]} />
+      {!night && !raining && <Sky distance={450} sunPosition={dir.toArray()} turbidity={2.2} rayleigh={2.2} mieCoefficient={0.004} mieDirectionalG={0.8} />}
+      {daylight < 0.5 && !raining && <Stars radius={140} depth={40} count={night ? 3000 : 800} factor={4} fade speed={0.4} />}
       {quality !== 'low' && (
       <Environment frames={1} resolution={64}>
         <Lightformer form="ring" intensity={night ? 0.4 : 1.4} color={night ? '#4a5ba8' : '#cfeaff'} scale={40} position={[0, 20, 0]} rotation-x={Math.PI / 2} />
@@ -93,13 +96,13 @@ export function DayNight() {
       </Environment>
       )}
       <hemisphereLight
-        args={[night ? '#40508a' : '#e6f5ff', night ? '#18241d' : '#7fa35a', (night ? 0.35 : 0.45 + daylight * 0.35) * (quality === 'low' ? 1.8 : 1)]}
+        args={[night ? '#40508a' : '#e6f5ff', night ? '#18241d' : '#7fa35a', (night ? 0.35 : 0.45 + daylight * 0.35) * (quality === 'low' ? 1.8 : 1) * (raining ? 1.15 : 1)]}
       />
       <directionalLight
         ref={light}
         castShadow={quality !== 'low'}
         color={night ? '#a8bcff' : sunColor}
-        intensity={night ? 0.6 : 0.8 + daylight * 2.1}
+        intensity={(night ? 0.6 : 0.8 + daylight * 2.1) * dim}
         shadow-mapSize={[shadowSize, shadowSize]}
         shadow-camera-left={-26}
         shadow-camera-right={26}
@@ -118,6 +121,7 @@ export function DayNight() {
 export function Clouds() {
   const group = useRef()
   const night = useStore((s) => s.night)
+  const raining = useStore((s) => s.weather === 'rain')
   const clouds = useMemo(() => {
     const rand = rng(42)
     return Array.from({ length: 10 }, (_, i) => ({
@@ -137,21 +141,21 @@ export function Clouds() {
     group.current.children.forEach((c, i) => {
       const cl = clouds[i]
       const a = cl.angle + clock.elapsedTime * cl.speed
-      c.position.set(Math.cos(a) * cl.r, cl.y + Math.sin(clock.elapsedTime * 0.2 + i) * 0.3, Math.sin(a) * cl.r)
+      c.position.set(Math.cos(a) * cl.r, (raining ? cl.y - 4 : cl.y) + Math.sin(clock.elapsedTime * 0.2 + i) * 0.3, Math.sin(a) * cl.r)
       c.rotation.y = -a
     })
   })
   return (
     <group ref={group}>
       {clouds.map((c, i) => (
-        <group key={i} scale={c.scale}>
+        <group key={i} scale={raining ? c.scale * 1.5 : c.scale}>
           {c.puffs.map(([x, y, z, s], k) => (
             <mesh key={k} position={[x, y, z]} scale={[s, s * 0.78, s]}>
               <icosahedronGeometry args={[1, 3]} />
               <meshStandardMaterial
-                color={night ? '#4b5680' : '#ffffff'}
-                emissive={night ? '#1a2040' : '#ffffff'}
-                emissiveIntensity={night ? 0.2 : 0.18}
+                color={night ? '#4b5680' : raining ? '#9aa3b0' : '#ffffff'}
+                emissive={night ? '#1a2040' : raining ? '#5a6370' : '#ffffff'}
+                emissiveIntensity={night ? 0.2 : raining ? 0.1 : 0.18}
                 roughness={1}
               />
             </mesh>
@@ -203,6 +207,8 @@ export function Fireflies({ count = 70 }) {
 /** Leaves / petals gently drifting down around the player during the day. */
 export function FallingLeaves({ count = 26 }) {
   const night = useStore((s) => s.night)
+  const weather = useStore((s) => s.weather)
+  const active = weather === 'blossom' ? count : weather === 'rain' ? 0 : Math.ceil(count / 3)
   const mesh = useRef()
   const leaves = useMemo(() => {
     const rand = rng(8)
@@ -213,7 +219,15 @@ export function FallingLeaves({ count = 26 }) {
     if (!mesh.current) return
     const t = clock.elapsedTime
     const p = playerState.position
+    const gust = weather === 'blossom' ? 1.5 + Math.sin(t * 0.4) * 1.2 : 0
     leaves.forEach((l, i) => {
+      if (i >= active) {
+        dummy.scale.setScalar(0)
+        dummy.updateMatrix()
+        mesh.current.setMatrixAt(i, dummy.matrix)
+        return
+      }
+      l.x += gust * delta
       if (l.y < 0.05) {
         // respawn above, somewhere around the player
         l.x = p.x + (l.rand() - 0.5) * 24

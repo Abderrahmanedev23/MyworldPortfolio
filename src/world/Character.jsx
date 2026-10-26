@@ -10,6 +10,7 @@ export const MODELS = {
   mayor: '/models/mayor.glb',
   gardener: '/models/gardener.glb',
   fisher: '/models/fisher.glb',
+  jogger: '/models/jogger.glb',
 }
 Object.values(MODELS).forEach((url) => useGLTF.preload(url))
 

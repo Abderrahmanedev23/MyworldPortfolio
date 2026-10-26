@@ -72,6 +72,9 @@ export function TitleScreen() {
           <button className="btn big" onClick={() => window.dispatchEvent(new Event('game-start'))} autoFocus>
             ▶ Start exploring
           </button>
+          <button className="btn ghost light" onClick={() => window.dispatchEvent(new CustomEvent('game-start', { detail: { tour: true } }))}>
+            🧭 Guided tour
+          </button>
           <a className="btn ghost light" href="#/classic">
             Classic site
           </a>

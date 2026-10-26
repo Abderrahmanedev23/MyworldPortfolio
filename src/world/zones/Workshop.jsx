@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Sparkles } from '@react-three/drei'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { Label } from '../Label'
+import { ProjectScreen } from '../ProjectScreen'
 import { useInteractable } from '../../interaction'
 import { useStore } from '../../store'
 import { projects, secrets } from '../../content'
@@ -18,16 +19,12 @@ const H = 3
 
 function Booth({ project, index, local }) {
   const openPanel = useStore((s) => s.openPanel)
-  const screen = useRef()
   useInteractable(`project-${project.id}`, {
     position: at([local[0], 0, local[2] + 0.9]),
     radius: 1.5,
     label: `View ${project.title}`,
     promptHeight: 2.6,
     onInteract: () => openPanel({ kind: 'project', data: index, focus: at([local[0], 1.5, local[2]]), focusDistance: 3.6 }),
-  })
-  useFrame(({ clock }) => {
-    screen.current.emissiveIntensity = 0.35 + Math.sin(clock.elapsedTime * 2 + index) * 0.1
   })
   return (
     <group position={local}>
@@ -48,14 +45,11 @@ function Booth({ project, index, local }) {
           <boxGeometry args={[1.5, 1, 0.08]} />
           <meshStandardMaterial color="#2b2d42" />
         </mesh>
-        <mesh position={[0, 0, 0.045]}>
-          <planeGeometry args={[1.36, 0.86]} />
-          <meshStandardMaterial ref={screen} color={project.color} emissive={project.color} emissiveIntensity={0.35} />
-        </mesh>
-        <Label text={project.title} size={0.17} background="rgba(0,0,0,0.35)" position={[0, 0.05, 0.06]} />
-        <Label text={project.tags.slice(0, 3).join(' · ')} size={0.09} background={null} font="500" position={[0, -0.25, 0.06]} />
+        <group position={[0, 0, 0.045]}>
+          <ProjectScreen project={project} index={index} width={1.36} height={0.86} />
+        </group>
       </group>
-      <Label text={`#${index + 1}`} size={0.14} background={null} color="#2b2d42" position={[0, 0.7, 0.36]} />
+      <Label text={`#${index + 1} ${project.title}`} size={0.12} background={null} color="#2b2d42" position={[0, 0.7, 0.36]} />
     </group>
   )
 }

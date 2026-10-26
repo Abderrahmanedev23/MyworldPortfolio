@@ -50,12 +50,15 @@ export function Pet() {
     const behind = playerState.facing + Math.PI + 0.7
     target.set(p.x + Math.sin(behind) * 1.4, 0, p.z + Math.cos(behind) * 1.4)
     // on the dock: walk on the planks; in the sea: wait at the water's edge
-    const onDock = p.x > 28 && Math.abs(p.z) < 1.1 && !playerState.swimming
+    const away = playerState.swimming || playerState.boating
+    const onDock = p.x > 28 && Math.abs(p.z) < 1.1 && !away
     target.y = onDock ? 0.12 : 0
     if (onDock) target.z = Math.max(-0.7, Math.min(0.7, target.z))
     const tr = Math.hypot(target.x, target.z)
     if (!onDock && tr > ISLAND_RADIUS - 1) target.multiplyScalar((ISLAND_RADIUS - 1) / tr)
-    if (playerState.swimming) target.y = 0
+    if (away) target.y = 0
+    // marooned on the islet with you? the fox waits back home on the beach
+    if (Math.hypot(p.x, p.z) > 45) target.set(28, 0, -3)
 
     const d = target.distanceTo(pos.current)
     if (d > 25) pos.current.copy(target) // caught up after fast travel

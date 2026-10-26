@@ -4,6 +4,8 @@ import { Panel } from './ui/Panel'
 import { Dialogue } from './ui/Dialogue'
 import { PauseMenu } from './ui/PauseMenu'
 import { MapScreen } from './ui/MapScreen'
+import { PhotoMode } from './ui/PhotoMode'
+import { TourCard, startTour } from './ui/Tour'
 import { LoadingScreen, TitleScreen } from './ui/Boot'
 import { ClassicSite } from './ui/ClassicSite'
 import { useKeyboard } from './input'
@@ -69,6 +71,7 @@ function Game() {
   const ready = useStore((s) => s.ready)
   const menu = useStore((s) => s.menu)
   const fade = useStore((s) => s.fade)
+  const photo = useStore((s) => s.photo)
   const settings = useStore((s) => s.settings)
   const [, force] = useState(0)
   useKeyboard()
@@ -93,11 +96,12 @@ function Game() {
 
   // title → playing (button, any key, tap, gamepad A). Starting audio needs this user gesture.
   useEffect(() => {
-    const start = () => {
+    const start = (e) => {
       if (useStore.getState().phase !== 'title') return
       audio.init()
       audio.play('open')
       useStore.getState().start()
+      if (e?.detail?.tour) setTimeout(startTour, 500)
     }
     window.addEventListener('game-start', start)
     return () => window.removeEventListener('game-start', start)
@@ -114,10 +118,12 @@ function Game() {
           <World />
         </Suspense>
       </WorldBoundary>
-      {phase === 'playing' && (
+      {phase === 'playing' && photo && <PhotoMode />}
+      {phase === 'playing' && !photo && (
         <>
           <HUD />
           <Dialogue />
+          <TourCard />
           <Panel />
           {menu === 'pause' && <PauseMenu />}
           {menu === 'map' && <MapScreen />}

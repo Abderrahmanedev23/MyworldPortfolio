@@ -65,6 +65,9 @@ export const playerState = {
   surface: 'grass', // grass | sand | wood | stone
   sitAt: null, // { position: [x,y,z], rotation } while sitting
   swimming: false,
+  boating: false, // sitting in the rowing boat
+  boatSeat: null, // [x, y, z] seat position while boating
+  boatHeading: 0,
   fishing: false, // true while the fishing minigame owns the player
   fishAnim: null, // animation the fishing minigame wants
   rig: null, // the player's model (for attaching the fishing rod to the hand)
@@ -92,6 +95,18 @@ export const useStore = create((set, get) => ({
 
   night: false,
   setNight: (night) => set({ night }),
+
+  boating: false, // mirrors playerState.boating for the UI
+  setBoating: (boating) => set({ boating }),
+
+  // weather: clear | rain | blossom (+ a rainbow for a while after rain)
+  weather: 'clear',
+  rainbow: false,
+  setWeather: (weather) => {
+    const prev = get().weather
+    set({ weather, rainbow: prev === 'rain' && weather !== 'rain' })
+  },
+  setRainbow: (rainbow) => set({ rainbow }),
 
   area: null, // id of the named area the player is in
   setArea: (area) => set({ area }),
@@ -132,6 +147,14 @@ export const useStore = create((set, get) => ({
     save(COLLECTION_KEY, next)
     return !prev
   },
+
+  // guided tour: null | { step, focus }
+  tour: null,
+  setTour: (tour) => set({ tour }),
+
+  // photo mode
+  photo: false,
+  setPhoto: (photo) => set({ photo, panel: null, dialogue: null, menu: null }),
 
   // overlays that pause the game
   menu: null, // null | 'pause' | 'map'
@@ -178,7 +201,7 @@ export const useStore = create((set, get) => ({
 /** Is gameplay blocked by a UI layer (panel, dialogue, menu, title)? */
 export function isBusy() {
   const s = useStore.getState()
-  return s.phase !== 'playing' || !!s.panel || !!s.dialogue || !!s.menu || !!s.fishing
+  return s.phase !== 'playing' || !!s.panel || !!s.dialogue || !!s.menu || !!s.fishing || !!s.tour || s.photo
 }
 
 if (import.meta.env.DEV && typeof window !== 'undefined') window.__store = useStore

@@ -4,5 +4,6 @@ import skills from './skills.json'
 import experience from './experience.json'
 import secrets from './secrets.json'
 import fish from './fish.json'
+import tour from './tour.json'
 
-export { profile, projects, skills, experience, secrets, fish }
+export { profile, projects, skills, experience, secrets, fish, tour }

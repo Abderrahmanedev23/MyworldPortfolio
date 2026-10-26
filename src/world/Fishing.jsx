@@ -32,8 +32,11 @@ const DOCK = { x0: 27.6, x1: 37.4, z: 1.4 }
 const inDockArea = (x, z) => x > DOCK.x0 && x < DOCK.x1 && Math.abs(z) < DOCK.z
 
 function pickSpecies() {
-  const night = useStore.getState().night
-  const weights = SPECIES.map((f) => RARITY_WEIGHT[f.rarity] * (f.night ? (night ? 3 : 0.25) : 1))
+  const { night, weather } = useStore.getState()
+  // night fish bite at night; rain brings the rarer fish closer to the surface
+  const weights = SPECIES.map(
+    (f) => RARITY_WEIGHT[f.rarity] * (f.night ? (night ? 3 : 0.25) : 1) * (weather === 'rain' && f.rarity >= 3 ? 1.8 : 1),
+  )
   let r = Math.random() * weights.reduce((a, b) => a + b, 0)
   for (let i = 0; i < SPECIES.length; i++) {
     r -= weights[i]
