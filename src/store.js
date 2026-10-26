@@ -43,6 +43,15 @@ export const useStore = create((set, get) => ({
   quality: isTouch ? 'low' : 'high',
   setQuality: (quality) => set({ quality }),
 
+  ready: false,
+  setReady: () => set({ ready: true }),
+
+  indoors: false,
+  setIndoors: (indoors) => set({ indoors }),
+
+  night: false,
+  setNight: (night) => set({ night }),
+
   sound: false,
   setSound: (sound) => set({ sound }),
 
