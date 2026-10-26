@@ -11,17 +11,31 @@ import { SPAWN } from './layout'
 // Opening cinematic: a seaplane trailing a banner flies over the island,
 // the character jumps out, free-falls, opens a parachute and lands on the plaza.
 // Shared with Player (drives the body) and CameraRig (drives the camera).
-export const introState = { active: false, pos: new Vector3(), anim: 'jump', facing: 0, hidden: true, cam: new Vector3(), look: new Vector3() }
+export const introState = {
+  active: false,
+  pos: new Vector3(),
+  anim: 'idle',
+  facing: 0,
+  tilt: 0, // forward rotation of the body (flip, belly-down skydive)
+  hidden: false,
+  cam: new Vector3(),
+  look: new Vector3(),
+  snap: false, // jump the camera straight to the first shot
+}
 
-const T_JUMP = 2.6 // plane is overhead
-const T_OPEN = 3.7 // parachute opens
-const T_LAND = 8.2
-const T_END = 9.2
+const T_CHEER = 1.9 // character cheers on the float
+const T_JUMP = 3.2 // plane is overhead: leap!
+const T_OPEN = 4.9 // parachute opens
+const T_LAND = 9.6
+const T_END = 10.8
 const JUMP_Y = 27
-const OPEN_Y = 19
+const OPEN_Y = 18
 const LAND = new Vector3(SPAWN[0], 0.7, SPAWN[2])
 const PLANE_DIR = new Vector3(1, 0, -0.55).normalize()
-const PLANE_SPEED = 20
+const PLANE_SIDE = new Vector3(-PLANE_DIR.z, 0, PLANE_DIR.x) // right-hand side of the plane
+const PLANE_SPEED = 18
+const FLOAT_OFFSET = new Vector3() // where the character stands (right float), set per frame
+const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2)
 
 // ?introSpeed=0.2 plays the cinematic in slow motion (handy for screenshots)
 const SPEED = Number(new URLSearchParams(window.location.search).get('introSpeed')) || 1
@@ -136,23 +150,73 @@ function Parachute({ chuteRef }) {
   )
 }
 
+// Clouds the plane flies through during the opening shot.
+function IntroClouds({ cloudsRef }) {
+  const puffs = useMemo(() => {
+    const out = []
+    const p = new Vector3()
+    ;[0.6, 1.5, 2.4].forEach((t, i) => {
+      planeAt(t, p)
+      const side = (i % 2 ? -1 : 1) * (2.5 + i)
+      for (let k = 0; k < 6; k++) {
+        out.push({
+          pos: [p.x + PLANE_SIDE.x * side + (Math.random() - 0.5) * 4, p.y - 1 + Math.random() * 2.5, p.z + PLANE_SIDE.z * side + (Math.random() - 0.5) * 4],
+          s: 1.4 + Math.random() * 1.6,
+        })
+      }
+    })
+    return out
+  }, [])
+  return (
+    <group ref={cloudsRef}>
+      {puffs.map((c, i) => (
+        <mesh key={i} position={c.pos} scale={[c.s, c.s * 0.75, c.s]}>
+          <icosahedronGeometry args={[1, 3]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.25} roughness={1} transparent opacity={0.9} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+// Wind streaks rushing past during free fall.
+function Streaks({ streaksRef }) {
+  const lines = useMemo(() => Array.from({ length: 26 }, () => ({ x: (Math.random() - 0.5) * 5, z: (Math.random() - 0.5) * 5, o: Math.random() * 6, s: 0.6 + Math.random() })), [])
+  return (
+    <group ref={streaksRef}>
+      {lines.map((l, i) => (
+        <mesh key={i} position={[l.x, 0, l.z]} userData={l}>
+          <boxGeometry args={[0.02, 1.4 * l.s, 0.02]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.55} depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 export function Intro() {
   const intro = useStore((s) => s.intro)
+  const setCaption = useStore((s) => s.setIntroCaption)
   const planeRef = useRef()
   const propRef = useRef()
   const chuteRef = useRef()
+  const cloudsRef = useRef()
+  const streaksRef = useRef()
   const time = useRef(0)
   const flags = useRef({})
   const tmp = useMemo(() => new Vector3(), [])
   const jumpFrom = useMemo(() => new Vector3(), [])
+  const vel = useMemo(() => new Vector3(), [])
 
   const finish = () => {
     if (!introState.active) return
     introState.active = false
     introState.hidden = false
+    introState.tilt = 0
     audio.setEngine(0)
     playerState.teleport = [LAND.x, LAND.y + 0.1, LAND.z]
     input.cameraYaw = 0
+    setCaption(null)
     useStore.getState().endIntro()
     window.dispatchEvent(new Event('intro-done'))
   }
@@ -160,7 +224,9 @@ export function Intro() {
   useEffect(() => {
     if (!intro) return
     introState.active = true
-    introState.hidden = true
+    introState.hidden = false
+    introState.snap = true
+    introState.tilt = 0
     time.current = 0
     flags.current = {}
     const skip = () => finish()
@@ -169,93 +235,148 @@ export function Intro() {
   }, [intro])
 
   useFrame(({ clock }, delta) => {
-    if (!introState.active) {
-      if (planeRef.current) planeRef.current.visible = false
-      if (chuteRef.current) chuteRef.current.visible = false
-      return
-    }
-    time.current += Math.min(delta, 0.1) * SPEED
-    const t = time.current
-    const f = flags.current
     const plane = planeRef.current
     const chute = chuteRef.current
+    if (!introState.active) {
+      plane.visible = false
+      chute.visible = false
+      cloudsRef.current.visible = false
+      streaksRef.current.visible = false
+      return
+    }
+    const dt = Math.min(delta, 0.1) * SPEED
+    time.current += dt
+    const t = time.current
+    const f = flags.current
+    cloudsRef.current.visible = t < T_JUMP + 1
 
-    // plane: flies straight over the plaza, a little bank and bob
+    // captions in the letterbox
+    const caption = t < 2.6 ? 'sea' : t > 5.6 && t < T_LAND + 0.3 ? 'title' : null
+    if (caption !== f.caption) {
+      f.caption = caption
+      setCaption(caption)
+    }
+
+    // ---- plane: straight over the plaza, then banks away and climbs ----
     planeAt(t, tmp)
+    const after = Math.max(0, t - T_JUMP)
+    tmp.y += after * after * 0.25
     plane.visible = t < T_END
     plane.position.copy(tmp)
-    plane.position.y += Math.sin(t * 1.5) * 0.25
-    plane.rotation.set(Math.sin(t * 1.2) * 0.06, -Math.atan2(PLANE_DIR.z, PLANE_DIR.x), 0)
+    plane.position.y += Math.sin(t * 1.5) * 0.2
+    const heading = -Math.atan2(PLANE_DIR.z, PLANE_DIR.x)
+    plane.rotation.set(Math.sin(t * 1.2) * 0.05 - Math.min(0.45, after * 0.25), heading, Math.min(0.2, after * 0.1))
     propRef.current.rotation.x = t * 40
-    const dPlane = tmp.distanceTo(LAND)
-    audio.setEngine(Math.max(0, 1 - dPlane / 70))
+    audio.setEngine(Math.max(0.15, 1 - tmp.distanceTo(LAND) / 60) * (t < T_END ? 1 : 0))
+
+    // the right-hand float, in world space
+    FLOAT_OFFSET.set(0.2, -0.95 + 0.12, 0.9).applyEuler(plane.rotation)
 
     const p = introState.pos
+    introState.hidden = false
     if (t < T_JUMP) {
-      introState.hidden = true
-      p.copy(tmp)
-      introState.anim = 'jump'
-    } else {
+      // standing on the float, holding on; cheers when the island is close
+      p.copy(plane.position).add(FLOAT_OFFSET)
+      p.y += 0.7
+      introState.facing = Math.atan2(PLANE_SIDE.x, PLANE_SIDE.z) // looking out to the side
+      introState.anim = t > T_CHEER ? 'wave' : 'idle'
+      introState.tilt = 0
+    } else if (t < T_OPEN) {
       if (!f.jumped) {
         f.jumped = true
-        jumpFrom.copy(tmp).setY(JUMP_Y)
+        jumpFrom.copy(p)
+        vel.copy(PLANE_SIDE).multiplyScalar(3).addScaledVector(PLANE_DIR, 4)
+        vel.y = 4
+        audio.play('jump')
         audio.play('wind')
       }
-      introState.hidden = false
-      introState.facing = Math.PI
-      if (t < T_OPEN) {
-        // free fall, drifting towards the landing spot
-        const k = (t - T_JUMP) / (T_OPEN - T_JUMP)
-        p.lerpVectors(jumpFrom, LAND, k * 0.25)
-        p.y = MathUtils.lerp(JUMP_Y, OPEN_Y, k * k)
-        introState.anim = 'jump'
-      } else if (t < T_LAND) {
-        if (!f.opened) {
-          f.opened = true
-          audio.play('chute')
-          f.from = p.clone()
-        }
-        const k = (t - T_OPEN) / (T_LAND - T_OPEN)
-        const e = 1 - Math.pow(1 - k, 2.2)
-        p.lerpVectors(f.from, LAND, e)
-        // gentle swing under the canopy
-        p.x += Math.sin(t * 1.8) * 0.6 * (1 - k)
-        p.z += Math.cos(t * 1.4) * 0.4 * (1 - k)
-        introState.anim = 'sit'
-      } else {
-        if (!f.landed) {
-          f.landed = true
-          playerState.landedAt = clock.elapsedTime
-          playerState.landImpact = 0.7
-          audio.play('land')
-          audio.play('achievement')
-        }
-        p.copy(LAND)
-        introState.anim = 'wave'
+      // ballistic hop off the float, then drift towards the landing spot
+      const k = t - T_JUMP
+      const fall = (T_OPEN - T_JUMP)
+      p.copy(jumpFrom).addScaledVector(vel, Math.min(k, 0.7))
+      p.y = jumpFrom.y + vel.y * k - 0.5 * 11 * k * k
+      p.lerp(tmp.set(LAND.x, p.y, LAND.z), ease(Math.min(1, k / fall)) * 0.3)
+      p.y = Math.max(p.y, OPEN_Y)
+      // front flip, then hold a belly-down skydive pose
+      const flip = Math.min(1, k / 0.75)
+      introState.tilt = ease(flip) * (Math.PI * 2 + 1.25) + Math.sin(t * 7) * 0.05 * flip
+      introState.facing = Math.atan2(LAND.x - p.x, LAND.z - p.z) || Math.PI
+      introState.anim = 'jump'
+    } else if (t < T_LAND) {
+      if (!f.opened) {
+        f.opened = true
+        f.from = p.clone()
+        f.openAt = t
+        audio.play('chute')
       }
+      const k = (t - T_OPEN) / (T_LAND - T_OPEN)
+      p.lerpVectors(f.from, LAND, 1 - Math.pow(1 - k, 2.2))
+      // jolt upwards when the canopy catches air, then a gentle swing
+      const sinceOpen = t - f.openAt
+      p.y += Math.sin(Math.min(1, sinceOpen / 0.5) * Math.PI) * 1.2
+      p.x += Math.sin(t * 1.8) * 0.6 * (1 - k)
+      p.z += Math.cos(t * 1.4) * 0.4 * (1 - k)
+      introState.tilt = (Math.PI * 2 + 1.25) * Math.max(0, 1 - sinceOpen / 0.45) + Math.sin(t * 1.8) * 0.08 * (1 - k)
+      introState.facing = Math.PI
+      introState.anim = 'sit'
+    } else {
+      if (!f.landed) {
+        f.landed = true
+        playerState.landedAt = clock.elapsedTime // drives the squash, camera dip and dust puff
+        playerState.landImpact = 0.8
+        audio.play('land')
+        audio.play('achievement')
+      }
+      p.copy(LAND)
+      introState.tilt = 0
+      introState.facing = Math.PI
+      introState.anim = 'wave'
     }
 
-    // parachute: pops open, then collapses after landing
-    const opened = t >= T_OPEN
-    chute.visible = opened && t < T_END
+    // ---- parachute: pops open, then collapses off to the side ----
+    chute.visible = t >= T_OPEN && t < T_END
     if (chute.visible) {
       const open = Math.min(1, (t - T_OPEN) / 0.35)
-      const collapse = t > T_LAND ? Math.min(1, (t - T_LAND) / 0.8) : 0
-      chute.position.set(p.x, p.y - 0.7, p.z)
-      chute.scale.set(0.2 + open * 0.8, (0.2 + open * 0.8) * (1 - collapse * 0.9), 0.2 + open * 0.8)
-      chute.rotation.set(Math.cos(t * 1.4) * 0.12, 0, -Math.sin(t * 1.8) * 0.15 + collapse * 1.2)
+      const flutter = Math.sin((t - T_OPEN) * 30) * 0.08 * (1 - Math.min(1, (t - T_OPEN) / 0.6))
+      const collapse = t > T_LAND ? Math.min(1, (t - T_LAND) / 0.9) : 0
+      chute.position.set(p.x + collapse * 1.6, p.y - 0.7 - collapse * 0.3, p.z)
+      const s = 0.2 + open * 0.8 + flutter
+      chute.scale.set(s, s * (1 - collapse * 0.92), s)
+      chute.rotation.set(Math.cos(t * 1.4) * 0.12, 0, -Math.sin(t * 1.8) * 0.15 * (1 - collapse) - collapse * 1.3)
     }
 
-    // cinematic camera
+    // ---- wind streaks while falling ----
+    const falling = t >= T_JUMP && t < T_OPEN + 0.3
+    streaksRef.current.visible = falling
+    if (falling) {
+      streaksRef.current.position.copy(p)
+      streaksRef.current.children.forEach((m) => {
+        const l = m.userData
+        m.position.y = ((l.o + t * 18 * l.s) % 8) - 4
+      })
+    }
+
+    // ---- cinematic camera ----
     if (t < T_JUMP) {
-      introState.cam.set(LAND.x - 9, 6, LAND.z + 16)
-      introState.look.copy(tmp)
+      // chase cam alongside the plane, swinging round to the float
+      const k = ease(Math.min(1, t / T_JUMP))
+      introState.cam
+        .copy(plane.position)
+        .addScaledVector(PLANE_DIR, -9 + k * 6)
+        .addScaledVector(PLANE_SIDE, 4 + k * 3)
+      introState.cam.y += 2.2 - k * 1
+      introState.look.copy(plane.position).addScaledVector(PLANE_DIR, 3 - k * 3).addScaledVector(PLANE_SIDE, k * 0.9)
     } else if (t < T_LAND) {
-      introState.cam.set(p.x - 7, p.y + 2.5, p.z + 9)
-      introState.look.set(p.x, p.y + (opened ? 1.2 : 0), p.z)
+      introState.cam.set(p.x - 6, p.y + 2.2, p.z + 8)
+      introState.look.set(p.x, p.y + (t >= T_OPEN ? 1.4 : 0), p.z)
+      if (f.openAt !== undefined && t - f.openAt < 0.5) {
+        const shake = (0.5 - (t - f.openAt)) * 0.5
+        introState.cam.x += (Math.random() - 0.5) * shake
+        introState.cam.y += (Math.random() - 0.5) * shake
+      }
     } else {
-      introState.cam.set(LAND.x, LAND.y + 4, LAND.z + 7.5)
-      introState.look.set(LAND.x, LAND.y + 0.6, LAND.z)
+      introState.cam.set(LAND.x + 1.5, LAND.y + 3.2, LAND.z + 6.5)
+      introState.look.set(LAND.x, LAND.y + 0.8, LAND.z)
     }
 
     if (t >= T_END) finish()
@@ -265,6 +386,8 @@ export function Intro() {
     <>
       <Plane planeRef={planeRef} propRef={propRef} />
       <Parachute chuteRef={chuteRef} />
+      <IntroClouds cloudsRef={cloudsRef} />
+      <Streaks streaksRef={streaksRef} />
     </>
   )
 }

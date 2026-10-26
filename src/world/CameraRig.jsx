@@ -86,7 +86,12 @@ export function CameraRig() {
     if (introState.active) {
       desired.copy(introState.cam)
       look.copy(introState.look)
-      speed = 4
+      speed = 5
+      if (introState.snap) {
+        introState.snap = false
+        base.current.copy(desired)
+        lookAt.current.copy(look)
+      }
     } else if (phase !== 'playing') {
       // title screen: slow orbit around the island
       const a = t * 0.06

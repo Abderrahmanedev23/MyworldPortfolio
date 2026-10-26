@@ -85,7 +85,9 @@ export const useStore = create((set, get) => ({
 
   // opening cinematic (skydive onto the plaza)
   intro: false,
-  endIntro: () => set({ intro: false }),
+  endIntro: () => set({ intro: false, introCaption: null }),
+  introCaption: null, // 'sea' | 'title' | null
+  setIntroCaption: (introCaption) => set({ introCaption }),
 
   settings: load(SETTINGS_KEY, DEFAULT_SETTINGS),
   setSetting: (key, value) => {

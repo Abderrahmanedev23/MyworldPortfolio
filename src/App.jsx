@@ -11,6 +11,7 @@ import { ClassicSite } from './ui/ClassicSite'
 import { useKeyboard } from './input'
 import { useStore } from './store'
 import { audio } from './audio'
+import { profile } from './content'
 
 // The 3D world (three.js + physics) is split out so the classic site loads fast.
 let worldLoaded = false
@@ -73,6 +74,7 @@ function Game() {
   const fade = useStore((s) => s.fade)
   const photo = useStore((s) => s.photo)
   const intro = useStore((s) => s.intro)
+  const caption = useStore((s) => s.introCaption)
   const settings = useStore((s) => s.settings)
   const [, force] = useState(0)
   useKeyboard()
@@ -124,6 +126,15 @@ function Game() {
         <div className="cinema">
           <div className="cinema-bar top" />
           <div className="cinema-bar bottom" />
+          {caption === 'sea' && <p className="cinema-caption">Somewhere above the sea…</p>}
+          {caption === 'title' && (
+            <div className="cinema-title">
+              <h1>
+                {profile.name}'s <span>World</span>
+              </h1>
+              <p>{profile.role}</p>
+            </div>
+          )}
           <button className="btn ghost light cinema-skip" onClick={() => window.dispatchEvent(new Event('intro-skip'))}>
             Skip ⏭
           </button>

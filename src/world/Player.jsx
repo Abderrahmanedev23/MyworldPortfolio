@@ -118,6 +118,9 @@ export function Player() {
       playerState.anim = introState.anim
       playerState.facing = introState.facing
       visual.current.rotation.y = introState.facing
+      // pivot the flip / belly-down pose around the character's middle
+      pose.current.rotation.x = introState.tilt
+      pose.current.position.set(0, 0.55 - Math.cos(introState.tilt) * 0.55, -Math.sin(introState.tilt) * 0.55)
       playerState.position.copy(ip)
       return
     }
