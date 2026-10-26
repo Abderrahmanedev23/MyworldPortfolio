@@ -14,6 +14,18 @@ npm run dev      # http://localhost:5173
 npm run build    # production build in dist/
 ```
 
+### With Docker
+
+```bash
+docker compose up --build        # http://localhost:8080
+# or without compose:
+docker build -t myworld-portfolio .
+docker run --rm -p 8080:80 myworld-portfolio
+```
+
+The image is a two-stage build: Node builds the site, then nginx (~80 MB image) serves `dist/`.
+It sends every route to `index.html`, gzips responses, and caches the hashed assets for a long time.
+
 Deploy: import the repo on Vercel (framework preset "Vite"). `vercel.json` is included.
 
 ## Controls
