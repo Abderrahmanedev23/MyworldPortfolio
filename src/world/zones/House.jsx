@@ -7,7 +7,7 @@ import { Signpost } from './Props'
 import { useInteractable } from '../../interaction'
 import { playerState, useStore } from '../../store'
 import { profile } from '../../content'
-import { occlude } from '../occlusion'
+import { occlude } from '../shaders'
 import { ZONES, faceCenter, toWorld } from '../layout'
 
 const W = 7 // width (x)

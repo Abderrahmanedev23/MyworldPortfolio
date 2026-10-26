@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { BallCollider, CuboidCollider, RigidBody } from '@react-three/rapier'
 import { Label } from './Label'
 import { useStore } from '../store'
+import { audio } from '../audio'
 import { ZONES } from './layout'
 
 const [fx, fz] = ZONES.field
@@ -28,7 +29,19 @@ export function Ball() {
 
   return (
     <group>
-      <RigidBody ref={ball} name="ball" colliders={false} position={BALL_START} restitution={0.6} linearDamping={0.6} angularDamping={0.6} ccd>
+      <RigidBody
+        ref={ball}
+        name="ball"
+        colliders={false}
+        position={BALL_START}
+        restitution={0.6}
+        linearDamping={0.6}
+        angularDamping={0.6}
+        ccd
+        onCollisionEnter={({ other }) => {
+          if (other.rigidBodyObject?.name === 'player') audio.play('kick')
+        }}
+      >
         <BallCollider args={[0.3]} mass={0.15} friction={0.8} />
         <mesh castShadow>
           <icosahedronGeometry args={[0.3, 1]} />

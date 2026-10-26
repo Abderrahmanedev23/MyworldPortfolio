@@ -1,11 +1,12 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { Sparkles } from '@react-three/drei'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { Label } from '../Label'
 import { useInteractable } from '../../interaction'
 import { useStore } from '../../store'
 import { projects, secrets } from '../../content'
-import { occlude } from '../occlusion'
+import { occlude } from '../shaders'
 import { ZONES, faceCenter, toWorld } from '../layout'
 
 const origin = ZONES.workshop
@@ -81,10 +82,13 @@ function RooftopStar() {
     star.current.position.y = H + 0.9 + Math.sin(clock.elapsedTime * 2) * 0.1
   })
   return (
-    <mesh ref={star} position={[pos[0], H + 0.9, pos[2]]} scale={found ? 0.6 : 1}>
-      <octahedronGeometry args={[0.35, 0]} />
-      <meshStandardMaterial color="#ffd166" emissive="#ffb703" emissiveIntensity={1.2} />
-    </mesh>
+    <group>
+      <mesh ref={star} position={[pos[0], H + 0.9, pos[2]]} scale={found ? 0.6 : 1}>
+        <octahedronGeometry args={[0.35, 0]} />
+        <meshStandardMaterial color="#ffd166" emissive="#ffb703" emissiveIntensity={2.2} toneMapped={false} />
+      </mesh>
+      {!found && <Sparkles count={20} scale={[1.6, 1.4, 1.6]} position={[pos[0], H + 0.9, pos[2]]} size={4} speed={0.5} color="#ffe28a" />}
+    </group>
   )
 }
 

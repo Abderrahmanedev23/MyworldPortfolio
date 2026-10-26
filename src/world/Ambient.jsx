@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { Sky, Stars } from '@react-three/drei'
-import { Color, MathUtils, Object3D, Vector3 } from 'three'
+import { useFrame, useThree } from '@react-three/fiber'
+import { Environment, Lightformer, Sky, Stars } from '@react-three/drei'
+import { AdditiveBlending, Color, MathUtils, Object3D, Vector3 } from 'three'
 import { playerState, useStore } from '../store'
-import { rng } from './layout'
+import { uniforms } from './shaders'
+import { audio } from '../audio'
+import { GRASS_RADIUS, rng } from './layout'
 
 /** Local time in hours; `?hour=21` in the URL overrides it for testing. */
 function currentHour() {
   const q = new URLSearchParams(window.location.search).get('hour')
-  if (q !== null && !Number.isNaN(Number(q))) return Number(q)
+  if (q !== null && q !== '' && !Number.isNaN(Number(q))) return Number(q)
   const d = new Date()
   return d.getHours() + d.getMinutes() / 60
 }
@@ -21,15 +23,26 @@ function sunFor(hour) {
   return { dir, daylight }
 }
 
-const DAY_SKY = new Color('#bfe6ff')
-const DUSK_SKY = new Color('#ffb38a')
-const NIGHT_SKY = new Color('#0b1026')
+const DAY_SKY = new Color('#a9dcff')
+const DUSK_SKY = new Color('#ffb08a')
+const NIGHT_SKY = new Color('#0e1433')
 
-/** Real-time day/night cycle: sun, moon, sky, fog, stars. */
-export function DayNight({ shadows }) {
+/** Updates the shared shader uniforms (time, player position, night) once per frame. */
+export function ShaderClock() {
+  useFrame(({ clock }) => {
+    uniforms.uTime.value = clock.elapsedTime
+    uniforms.uPlayer.value.copy(playerState.position)
+  })
+  return null
+}
+
+/** Real-time day/night cycle: sun, moon, sky, fog, stars and environment light. */
+export function DayNight() {
   const [hour, setHour] = useState(currentHour)
   const light = useRef()
   const setNight = useStore((s) => s.setNight)
+  const quality = useStore((s) => s.settings.quality)
+  const scene = useThree((s) => s.scene)
   useEffect(() => {
     const id = setInterval(() => setHour(currentHour()), 60_000)
     return () => clearInterval(id)
@@ -37,15 +50,24 @@ export function DayNight({ shadows }) {
 
   const { dir, daylight } = useMemo(() => sunFor(hour), [hour])
   const night = daylight < 0.15
-  useEffect(() => setNight(night), [night, setNight])
+  useEffect(() => {
+    setNight(night)
+    audio.setNight(night)
+    uniforms.uNight.value = night ? 1 : 0
+  }, [night, setNight])
 
-  const skyColor = useMemo(() => {
-    const dusk = 1 - Math.abs(daylight - 0.5) * 2 // peaks around sunrise/sunset
-    return NIGHT_SKY.clone().lerp(DAY_SKY, daylight).lerp(DUSK_SKY, dusk * 0.35)
-  }, [daylight])
+  const dusk = 1 - Math.abs(daylight - 0.5) * 2 // peaks around sunrise / sunset
+  const skyColor = useMemo(
+    () => NIGHT_SKY.clone().lerp(DAY_SKY, daylight).lerp(DUSK_SKY, dusk * 0.35),
+    [daylight, dusk],
+  )
+  useEffect(() => {
+    scene.environmentIntensity = night ? 0.25 : 0.55 + daylight * 0.45
+  }, [scene, night, daylight])
 
-  const lightDir = night ? new Vector3(-dir.x, Math.max(-dir.y, 0.4), -dir.z).normalize() : dir
-  const sunColor = new Color('#fff1d6').lerp(new Color('#ff9e6b'), 1 - daylight)
+  const lightDir = night ? new Vector3(-dir.x, Math.max(-dir.y, 0.45), -dir.z).normalize() : dir
+  const sunColor = new Color('#fff0d4').lerp(new Color('#ff9466'), dusk * 0.8)
+  const shadowSize = quality === 'high' ? 2048 : 1024
 
   // keep the shadow camera centred on the player
   useFrame(() => {
@@ -60,25 +82,34 @@ export function DayNight({ shadows }) {
   return (
     <>
       <color attach="background" args={[skyColor]} />
-      <fog attach="fog" args={[skyColor, 45, 140]} />
-      {!night && <Sky distance={450} sunPosition={dir.toArray()} turbidity={4} rayleigh={1.2} mieCoefficient={0.004} />}
-      {daylight < 0.5 && <Stars radius={120} depth={40} count={night ? 2500 : 800} factor={4} fade speed={0.5} />}
-      <hemisphereLight args={[night ? '#3b4a7a' : '#dff3ff', night ? '#1d2a1e' : '#6b8f4e', night ? 0.45 : 0.6 + daylight * 0.5]} />
-      <ambientLight intensity={night ? 0.15 : 0.25} />
+      <fog attach="fog" args={[skyColor, 55, 170]} />
+      {!night && <Sky distance={450} sunPosition={dir.toArray()} turbidity={2.2} rayleigh={2.2} mieCoefficient={0.004} mieDirectionalG={0.8} />}
+      {daylight < 0.5 && <Stars radius={140} depth={40} count={night ? 3000 : 800} factor={4} fade speed={0.4} />}
+      {quality !== 'low' && (
+      <Environment frames={1} resolution={64}>
+        <Lightformer form="ring" intensity={night ? 0.4 : 1.4} color={night ? '#4a5ba8' : '#cfeaff'} scale={40} position={[0, 20, 0]} rotation-x={Math.PI / 2} />
+        <Lightformer intensity={night ? 0.2 : 1.2} color={night ? '#283460' : '#ffe2b8'} scale={[30, 8, 1]} position={[0, 4, -20]} />
+        <Lightformer intensity={0.6} color={night ? '#1b2a2a' : '#8fcf7a'} scale={[40, 40, 1]} position={[0, -10, 0]} rotation-x={-Math.PI / 2} />
+      </Environment>
+      )}
+      <hemisphereLight
+        args={[night ? '#40508a' : '#e6f5ff', night ? '#18241d' : '#7fa35a', (night ? 0.35 : 0.45 + daylight * 0.35) * (quality === 'low' ? 1.8 : 1)]}
+      />
       <directionalLight
         ref={light}
-        castShadow={shadows}
-        color={night ? '#9db4ff' : sunColor}
-        intensity={night ? 0.55 : 0.6 + daylight * 2}
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-25}
-        shadow-camera-right={25}
-        shadow-camera-top={25}
-        shadow-camera-bottom={-25}
+        castShadow={quality !== 'low'}
+        color={night ? '#a8bcff' : sunColor}
+        intensity={night ? 0.6 : 0.8 + daylight * 2.1}
+        shadow-mapSize={[shadowSize, shadowSize]}
+        shadow-camera-left={-26}
+        shadow-camera-right={26}
+        shadow-camera-top={26}
+        shadow-camera-bottom={-26}
         shadow-camera-near={1}
         shadow-camera-far={80}
-        shadow-bias={-0.0005}
-        shadow-normalBias={0.03}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.04}
+        shadow-radius={4}
       />
     </>
   )
@@ -86,32 +117,43 @@ export function DayNight({ shadows }) {
 
 export function Clouds() {
   const group = useRef()
+  const night = useStore((s) => s.night)
   const clouds = useMemo(() => {
     const rand = rng(42)
-    return Array.from({ length: 9 }, (_, i) => ({
-      angle: (i / 9) * Math.PI * 2,
-      r: 18 + rand() * 30,
-      y: 16 + rand() * 8,
-      speed: 0.01 + rand() * 0.015,
-      puffs: Array.from({ length: 3 + Math.floor(rand() * 3) }, (_, k) => [k * 1.4 - 2, rand() * 0.6, rand() - 0.5, 1 + rand() * 0.8]),
+    return Array.from({ length: 10 }, (_, i) => ({
+      angle: (i / 10) * Math.PI * 2 + rand(),
+      r: 22 + rand() * 34,
+      y: 17 + rand() * 9,
+      speed: 0.008 + rand() * 0.012,
+      scale: 0.8 + rand() * 0.8,
+      puffs: Array.from({ length: 5 + Math.floor(rand() * 4) }, (_, k) => {
+        const x = (k - 3) * 1.15 + (rand() - 0.5) * 0.6
+        const s = 1.6 - Math.abs(k - 3) * 0.22 + rand() * 0.4
+        return [x, rand() * 0.5 + s * 0.3, (rand() - 0.5) * 1.4, s]
+      }),
     }))
   }, [])
   useFrame(({ clock }) => {
     group.current.children.forEach((c, i) => {
       const cl = clouds[i]
       const a = cl.angle + clock.elapsedTime * cl.speed
-      c.position.set(Math.cos(a) * cl.r, cl.y, Math.sin(a) * cl.r)
+      c.position.set(Math.cos(a) * cl.r, cl.y + Math.sin(clock.elapsedTime * 0.2 + i) * 0.3, Math.sin(a) * cl.r)
       c.rotation.y = -a
     })
   })
   return (
     <group ref={group}>
       {clouds.map((c, i) => (
-        <group key={i}>
+        <group key={i} scale={c.scale}>
           {c.puffs.map(([x, y, z, s], k) => (
-            <mesh key={k} position={[x, y, z]} scale={s}>
-              <icosahedronGeometry args={[1.2, 1]} />
-              <meshStandardMaterial color="#ffffff" flatShading transparent opacity={0.92} />
+            <mesh key={k} position={[x, y, z]} scale={[s, s * 0.78, s]}>
+              <icosahedronGeometry args={[1, 3]} />
+              <meshStandardMaterial
+                color={night ? '#4b5680' : '#ffffff'}
+                emissive={night ? '#1a2040' : '#ffffff'}
+                emissiveIntensity={night ? 0.2 : 0.18}
+                roughness={1}
+              />
             </mesh>
           ))}
         </group>
@@ -155,7 +197,7 @@ export function Birds() {
             <group key={s}>
               <mesh position={[s * 0.3, 0, 0]}>
                 <boxGeometry args={[0.6, 0.03, 0.22]} />
-                <meshStandardMaterial color="#2b2d42" />
+                <meshStandardMaterial color="#3a3d55" />
               </mesh>
             </group>
           ))}
@@ -165,9 +207,86 @@ export function Birds() {
   )
 }
 
+/** Glowing fireflies drifting over the grass at night (they bloom nicely). */
+export function Fireflies({ count = 70 }) {
+  const night = useStore((s) => s.night)
+  const mesh = useRef()
+  const flies = useMemo(() => {
+    const rand = rng(5)
+    return Array.from({ length: count }, () => {
+      const a = rand() * Math.PI * 2
+      const r = 4 + Math.sqrt(rand()) * (GRASS_RADIUS - 5)
+      return { x: Math.cos(a) * r, z: Math.sin(a) * r, y: 0.5 + rand() * 1.5, p: rand() * 100, s: 0.4 + rand() * 0.6 }
+    })
+  }, [count])
+  const dummy = useMemo(() => new Object3D(), [])
+  useFrame(({ clock }) => {
+    if (!mesh.current) return
+    const t = clock.elapsedTime
+    flies.forEach((f, i) => {
+      dummy.position.set(
+        f.x + Math.sin(t * 0.3 * f.s + f.p) * 1.5,
+        f.y + Math.sin(t * 0.8 + f.p) * 0.4,
+        f.z + Math.cos(t * 0.25 * f.s + f.p) * 1.5,
+      )
+      const blink = Math.max(0, Math.sin(t * 2 * f.s + f.p))
+      dummy.scale.setScalar(0.04 + blink * 0.05)
+      dummy.updateMatrix()
+      mesh.current.setMatrixAt(i, dummy.matrix)
+    })
+    mesh.current.instanceMatrix.needsUpdate = true
+  })
+  if (!night) return null
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, count]} frustumCulled={false}>
+      <sphereGeometry args={[1, 8, 6]} />
+      <meshBasicMaterial color={[4, 3.6, 1.2]} toneMapped={false} blending={AdditiveBlending} transparent depthWrite={false} />
+    </instancedMesh>
+  )
+}
+
+/** Leaves / petals gently drifting down around the player during the day. */
+export function FallingLeaves({ count = 26 }) {
+  const night = useStore((s) => s.night)
+  const mesh = useRef()
+  const leaves = useMemo(() => {
+    const rand = rng(8)
+    return Array.from({ length: count }, () => ({ x: 0, y: -1, z: 0, vy: 0, p: rand() * 10, rand }))
+  }, [count])
+  const dummy = useMemo(() => new Object3D(), [])
+  useFrame(({ clock }, delta) => {
+    if (!mesh.current) return
+    const t = clock.elapsedTime
+    const p = playerState.position
+    leaves.forEach((l, i) => {
+      if (l.y < 0.05) {
+        // respawn above, somewhere around the player
+        l.x = p.x + (l.rand() - 0.5) * 24
+        l.z = p.z + (l.rand() - 0.5) * 24
+        l.y = 4 + l.rand() * 4
+        l.vy = 0.35 + l.rand() * 0.35
+      }
+      l.y -= l.vy * delta
+      dummy.position.set(l.x + Math.sin(t * 1.3 + l.p) * 0.6, l.y, l.z + Math.cos(t + l.p) * 0.4)
+      dummy.rotation.set(t * 1.7 + l.p, t * 1.1 + l.p, Math.sin(t * 2 + l.p))
+      dummy.scale.setScalar(1)
+      dummy.updateMatrix()
+      mesh.current.setMatrixAt(i, dummy.matrix)
+    })
+    mesh.current.instanceMatrix.needsUpdate = true
+  })
+  if (night) return null
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, count]} frustumCulled={false}>
+      <circleGeometry args={[0.07, 5]} />
+      <meshStandardMaterial color="#ffb7c8" side={2} />
+    </instancedMesh>
+  )
+}
+
 // Footprints that appear when walking on the sand and slowly fade away.
 const MAX_PRINTS = 80
-const dummy = new Object3D()
+const dummyPrint = new Object3D()
 export function Footprints() {
   const mesh = useRef()
   const prints = useRef(Array.from({ length: MAX_PRINTS }, () => ({ x: 0, z: 0, rot: 0, age: 99 })))
@@ -177,10 +296,8 @@ export function Footprints() {
 
   useFrame((_, delta) => {
     const p = playerState.position
-    const r = Math.hypot(p.x, p.z)
-    const onSand = r > 26.3 && r < 32 && p.y < 0.9
     const walking = playerState.anim === 'walk' || playerState.anim === 'run'
-    if (onSand && walking && playerState.grounded && last.current.distanceTo(p) > 0.55) {
+    if (playerState.surface === 'sand' && walking && playerState.grounded && last.current.distanceTo(p) > 0.55) {
       last.current.copy(p)
       side.current *= -1
       const f = playerState.facing
@@ -194,11 +311,11 @@ export function Footprints() {
     prints.current.forEach((pr, i) => {
       pr.age += delta
       const s = MathUtils.clamp(1 - pr.age / 10, 0, 1)
-      dummy.position.set(pr.x, 0.015, pr.z)
-      dummy.rotation.set(-Math.PI / 2, 0, pr.rot)
-      dummy.scale.set(s * 0.6, s, s)
-      dummy.updateMatrix()
-      mesh.current.setMatrixAt(i, dummy.matrix)
+      dummyPrint.position.set(pr.x, 0.015, pr.z)
+      dummyPrint.rotation.set(-Math.PI / 2, 0, pr.rot)
+      dummyPrint.scale.set(s * 0.6, s, s)
+      dummyPrint.updateMatrix()
+      mesh.current.setMatrixAt(i, dummyPrint.matrix)
     })
     mesh.current.instanceMatrix.needsUpdate = true
   })

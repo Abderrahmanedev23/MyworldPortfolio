@@ -8,7 +8,7 @@ import { ROAD, pointsAlong } from '../layout'
 function Milestone({ item, index, pos, angle }) {
   const openPanel = useStore((s) => s.openPanel)
   // signs stand beside the road, facing it
-  const side = index % 2 ? 1 : -1
+  const side = index % 2 ? -1 : 1
   const nx = Math.cos(angle) * side * 1.9
   const nz = -Math.sin(angle) * side * 1.9
   const x = pos[0] + nx

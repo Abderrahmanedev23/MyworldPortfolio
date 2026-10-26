@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
-import { playerState, useStore } from './store'
+import { isBusy, playerState, useStore } from './store'
+import { audio } from './audio'
+import { AREAS } from './world/layout'
 
 // Registry of everything the player can interact with. One manager picks the
 // nearest in-range entry each frame, so prompts never overlap.
@@ -41,8 +43,8 @@ const tmp = new Vector3()
 
 export function InteractionManager() {
   useFrame(() => {
-    const { nearby, setNearby, panel } = useStore.getState()
-    if (panel) return
+    const { nearby, setNearby } = useStore.getState()
+    if (isBusy()) return
     let best = null
     let bestDist = Infinity
     for (const entry of registry.values()) {
@@ -59,6 +61,7 @@ export function InteractionManager() {
       }
     }
     if ((best?.id ?? null) !== (nearby?.id ?? null)) {
+      if (best) audio.play('prompt')
       setNearby(
         best
           ? {
@@ -71,6 +74,24 @@ export function InteractionManager() {
           : null,
       )
     }
+  })
+  return null
+}
+
+/** Tracks which named area (AREAS in layout.js) the player is standing in. */
+export function AreaTracker() {
+  useFrame(() => {
+    const { area, setArea, achievements } = useStore.getState()
+    const p = playerState.position
+    let found = null
+    for (const a of AREAS) {
+      if (a.secret && !achievements.includes(a.secret)) continue
+      if (Math.hypot(p.x - a.pos[0], p.z - a.pos[1]) < a.r) {
+        found = a.id
+        break
+      }
+    }
+    if (found !== area) setArea(found)
   })
   return null
 }

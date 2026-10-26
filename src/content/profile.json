@@ -16,21 +16,53 @@
     "glasses": true
   },
   "hobbies": [
-    { "id": "music", "title": "Music", "text": "A frame for a hobby. Edit hobbies in profile.json.", "color": "#ff8fab" },
-    { "id": "travel", "title": "Travel", "text": "Places I've been and want to go.", "color": "#7bdff2" },
-    { "id": "games", "title": "Games", "text": "Games that inspired this very portfolio.", "color": "#b8f2a1" }
-  ],
-  "npcLines": [
-    "Abderrahmane once fixed a bug by deleting a single semicolon. We still talk about it.",
-    "Have you checked the workshop? The projects are over there!",
-    "They say there's something shiny on top of the workshop roof...",
-    "I heard the fish near the dock are very picky."
+    {
+      "id": "music",
+      "title": "Music",
+      "text": "A frame for a hobby. Edit hobbies in profile.json.",
+      "color": "#ff8fab"
+    },
+    {
+      "id": "travel",
+      "title": "Travel",
+      "text": "Places I've been and want to go.",
+      "color": "#7bdff2"
+    },
+    {
+      "id": "games",
+      "title": "Games",
+      "text": "Games that inspired this very portfolio.",
+      "color": "#b8f2a1"
+    }
   ],
   "contact": {
     "email": "m.abderrahmane.dev@gmail.com",
     "socials": [
-      { "label": "GitHub", "url": "https://github.com/abderrahmanedev23" },
-      { "label": "LinkedIn", "url": "https://www.linkedin.com/" }
+      {
+        "label": "GitHub",
+        "url": "https://github.com/abderrahmanedev23"
+      },
+      {
+        "label": "LinkedIn",
+        "url": "https://www.linkedin.com/"
+      }
+    ]
+  },
+  "npcs": {
+    "npc-plaza": [
+      "Oh, a visitor! Welcome to Abderrahmane's World!",
+      "Every building here tells a piece of their story. The Workshop up north-east has all the projects.",
+      "Press M to open the map. You can fast-travel anywhere on the island!"
+    ],
+    "npc-garden": [
+      "Shhh... the plants are growing.",
+      "Each plant is a skill. The taller it grows, the more Abderrahmane has practised it.",
+      "Walk up to a plant and press E to look closer."
+    ],
+    "npc-dock": [
+      "Ahoy. The fish are picky today.",
+      "Try the end of the dock if you fancy a catch.",
+      "I heard there's a crystal hidden somewhere behind the trees in the south-west..."
     ]
   }
 }

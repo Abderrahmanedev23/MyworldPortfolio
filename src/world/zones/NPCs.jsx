@@ -1,21 +1,19 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
 import { CylinderCollider, RigidBody } from '@react-three/rapier'
 import { Avatar } from '../Avatar'
 import { Label } from '../Label'
 import { useInteractable } from '../../interaction'
 import { playerState, useStore } from '../../store'
 import { profile } from '../../content'
+import { audio } from '../../audio'
 import { NPCS } from '../layout'
-
-let lineIndex = 0
 
 function NPC({ npc }) {
   const visual = useRef()
   const state = useRef({ anim: 'idle' }).current
-  const say = useStore((s) => s.say)
-  const speech = useStore((s) => (s.speech?.id === npc.id ? s.speech : null))
+  const openDialogue = useStore((s) => s.openDialogue)
+  const quality = useStore((s) => s.settings.quality)
   const [x, z] = npc.position
 
   useInteractable(npc.id, {
@@ -24,30 +22,25 @@ function NPC({ npc }) {
     label: `Talk to ${npc.name}`,
     promptHeight: 2.4,
     onInteract: () => {
-      const lines = profile.npcLines
-      say({ id: npc.id, text: lines[lineIndex++ % lines.length], key: Date.now() })
-      state.anim = 'wave'
-      setTimeout(() => (state.anim = 'idle'), 1500)
+      audio.play('open')
+      openDialogue({
+        npc: { id: npc.id, name: npc.name, emoji: npc.emoji, color: npc.colors.hoodie, voice: npc.voice },
+        lines: profile.npcs?.[npc.id] ?? ['Hello there!'],
+        focus: [x, 1.3, z],
+        focusDistance: 3.6,
+      })
     },
   })
 
-  // close the bubble after a while
-  useEffect(() => {
-    if (!speech) return
-    const t = setTimeout(() => {
-      if (useStore.getState().speech?.key === speech.key) say(null)
-    }, 5000)
-    return () => clearTimeout(t)
-  }, [speech, say])
-
   useFrame(() => {
+    const talking = useStore.getState().dialogue?.npc.id === npc.id
+    state.anim = talking ? 'wave' : 'idle'
     const dx = playerState.position.x - x
     const dz = playerState.position.z - z
     const near = dx * dx + dz * dz < 36
     const target = near ? Math.atan2(dx, dz) : 0
     const r = visual.current.rotation
     r.y += Math.atan2(Math.sin(target - r.y), Math.cos(target - r.y)) * 0.08
-    if (speech && !near) say(null)
   })
 
   return (
@@ -56,16 +49,9 @@ function NPC({ npc }) {
         <CylinderCollider args={[0.7, 0.4]} position={[0, 0.7, 0]} />
       </RigidBody>
       <group ref={visual}>
-        <Avatar colors={npc.colors} state={state} scale={0.95} />
+        <Avatar colors={npc.colors} state={state} scale={0.95} outline={quality === 'high'} />
       </group>
-      <Label text={npc.name} size={0.2} billboard position={[0, 1.95, 0]} />
-      {speech && (
-        <Html position={[0, 2.3, 0]} center zIndexRange={[20, 0]}>
-          <div className="speech" key={speech.key}>
-            {speech.text}
-          </div>
-        </Html>
-      )}
+      <Label text={`${npc.emoji} ${npc.name}`} size={0.22} billboard position={[0, 2, 0]} />
     </group>
   )
 }

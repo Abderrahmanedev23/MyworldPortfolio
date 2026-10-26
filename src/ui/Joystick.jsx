@@ -7,7 +7,8 @@ const RADIUS = 55
 /** On-screen joystick + action / jump buttons for touch devices. */
 export function TouchControls() {
   const nearby = useStore((s) => s.nearby)
-  const panel = useStore((s) => s.panel)
+  const hidden = useStore((s) => !!s.panel || !!s.menu)
+  const dialogue = useStore((s) => !!s.dialogue)
   const [knob, setKnob] = useState({ x: 0, y: 0 })
   const base = useRef()
   const pointer = useRef(null)
@@ -34,7 +35,7 @@ export function TouchControls() {
     input.joystick.y = 0
   }
 
-  if (panel) return null
+  if (hidden || dialogue) return null
   return (
     <div className="touch">
       <div

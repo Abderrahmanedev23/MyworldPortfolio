@@ -3,10 +3,11 @@ import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, useRapier } from '@react-three/rapier'
 import { MathUtils } from 'three'
 import { Avatar } from './Avatar'
-import { getMoveInput, input } from '../input'
-import { playerState, useStore } from '../store'
+import { getMoveInput, input, pollGamepad } from '../input'
+import { isBusy, playerState, useStore } from '../store'
 import { profile } from '../content'
-import { SPAWN } from './layout'
+import { audio } from '../audio'
+import { GRASS_RADIUS, PATHS, SPAWN, distToSegment } from './layout'
 
 const WALK_SPEED = 3.8
 const RUN_SPEED = 7.5
@@ -25,6 +26,15 @@ function angleLerp(a, b, t) {
   return a + d * t
 }
 
+function surfaceAt(x, y, z) {
+  if (x > 29.5 && Math.abs(z) < 1.2 && y > 0.75) return 'wood'
+  if (useStore.getState().indoors) return 'wood'
+  const r = Math.hypot(x, z)
+  if (r > GRASS_RADIUS + 0.2) return 'sand'
+  if (r < 5.7 || PATHS.some(([a, b]) => distToSegment([x, z], a, b) < 1)) return 'stone'
+  return 'grass'
+}
+
 export function Player() {
   const body = useRef()
   const visual = useRef()
@@ -32,13 +42,13 @@ export function Player() {
   const idle = useRef(0)
   const waveUntil = useRef(0)
   const coyote = useRef(0)
+  const wasGrounded = useRef(true)
+  const fallSpeed = useRef(0)
+  const stepDist = useRef(0)
 
   // Dev helper: window.__teleport(x, z) jumps the player around the map.
   if (import.meta.env.DEV) {
-    window.__teleport = (x, z, y = 2) => {
-      body.current?.setTranslation({ x, y, z }, true)
-      body.current?.setLinvel({ x: 0, y: 0, z: 0 }, true)
-    }
+    window.__teleport = (x, z, y = 2) => (playerState.teleport = [x, y, z])
     window.__player = playerState
     window.__input = input
   }
@@ -46,18 +56,28 @@ export function Player() {
   useFrame((state, delta) => {
     const rb = body.current
     if (!rb) return
+    pollGamepad()
     const dt = Math.min(delta, 0.05)
     const now = state.clock.elapsedTime
     const pos = rb.translation()
     const vel = rb.linvel()
 
-    // Fell into the sea → respawn at the plaza.
-    if (pos.y < -4 || playerState.respawn) {
-      const fell = !playerState.respawn
-      playerState.respawn = false
-      rb.setTranslation({ x: SPAWN[0], y: SPAWN[1], z: SPAWN[2] }, true)
+    if (playerState.teleport) {
+      const [x, y, z] = playerState.teleport
+      playerState.teleport = null
+      playerState.sitAt = null
+      rb.setGravityScale(1, true)
+      rb.setTranslation({ x, y, z }, true)
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
-      if (fell) useStore.getState().unlock('swim')
+      playerState.position.set(x, y, z)
+      return
+    }
+
+    // Fell into the sea → splash, respawn at the plaza.
+    if (pos.y < -1.2) {
+      audio.play('splash')
+      useStore.getState().unlock('swim')
+      playerState.teleport = [SPAWN[0], SPAWN[1], SPAWN[2]]
       return
     }
 
@@ -66,8 +86,18 @@ export function Player() {
     const grounded = !!hit && vel.y < 2.5
     coyote.current = grounded ? 0.1 : Math.max(0, coyote.current - dt)
 
-    const { panel } = useStore.getState()
-    const move = panel ? { f: 0, r: 0, len: 0, run: false } : getMoveInput()
+    // landing: squash, dust and a thud scaled by how hard we hit the ground
+    if (!grounded) fallSpeed.current = Math.min(fallSpeed.current, vel.y)
+    if (grounded && !wasGrounded.current && fallSpeed.current < -4) {
+      playerState.landedAt = now
+      playerState.landImpact = Math.min(1, -fallSpeed.current / 14)
+      audio.play('land')
+    }
+    if (grounded) fallSpeed.current = 0
+    wasGrounded.current = grounded
+
+    const busy = isBusy()
+    const move = busy ? { f: 0, r: 0, len: 0, run: false } : getMoveInput()
 
     // Sitting on a bench: stay put until the player moves or jumps.
     if (playerState.sitAt) {
@@ -99,14 +129,16 @@ export function Player() {
     const speed = move.run ? RUN_SPEED : WALK_SPEED
     const control = grounded ? 14 : 4
     const k = 1 - Math.exp(-control * dt)
-    let vx = MathUtils.lerp(vel.x, dx * speed, k)
-    let vz = MathUtils.lerp(vel.z, dz * speed, k)
+    const vx = MathUtils.lerp(vel.x, dx * speed, k)
+    const vz = MathUtils.lerp(vel.z, dz * speed, k)
     let vy = vel.y
 
     if (input.jump) {
-      if (coyote.current > 0) {
+      if (coyote.current > 0 && !busy) {
         vy = JUMP_VELOCITY
         coyote.current = 0
+        playerState.jumpedAt = now
+        audio.play('jump')
       }
       input.jump = false
     }
@@ -116,6 +148,18 @@ export function Player() {
       playerState.facing = angleLerp(playerState.facing, Math.atan2(dx, dz), 1 - Math.exp(-12 * dt))
     }
     visual.current.rotation.y = playerState.facing
+
+    // Footsteps
+    playerState.surface = surfaceAt(pos.x, pos.y, pos.z)
+    const horiz = Math.hypot(vx, vz)
+    if (grounded && horiz > 0.5) {
+      stepDist.current += horiz * dt
+      const stride = move.run ? 0.95 : 0.62
+      if (stepDist.current > stride) {
+        stepDist.current = 0
+        audio.play('step', { surface: playerState.surface })
+      }
+    }
 
     // Animation state.
     if (input.wave) {
@@ -138,6 +182,8 @@ export function Player() {
     playerState.velocity.set(vx, vy, vz)
   })
 
+  const quality = useStore((s) => s.settings.quality)
+  const night = useStore((s) => s.night)
   return (
     <RigidBody
       ref={body}
@@ -150,8 +196,10 @@ export function Player() {
     >
       <CapsuleCollider args={[HALF_HEIGHT, RADIUS]} friction={0} frictionCombineRule={COMBINE_MIN} />
       <group ref={visual} position={[0, -FOOT, 0]}>
-        <Avatar colors={profile.avatar} state={playerState} />
+        <Avatar colors={profile.avatar} state={playerState} outline={quality !== 'low'} />
       </group>
+      {/* a soft lantern glow so you never lose your character at night */}
+      {night && <pointLight position={[0, 1.2, 0.8]} color="#ffd59a" intensity={5} distance={7} decay={1.8} />}
     </RigidBody>
   )
 }

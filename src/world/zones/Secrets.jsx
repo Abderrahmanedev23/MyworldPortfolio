@@ -1,12 +1,14 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { Sparkles } from '@react-three/drei'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { Bench } from './Props'
 import { useInteractable } from '../../interaction'
 import { useStore } from '../../store'
 import { secrets } from '../../content'
+import { audio } from '../../audio'
 import { ZONES, rng } from '../layout'
-import { occlude } from '../occlusion'
+import { occlude } from '../shaders'
 
 const CATCHES = [
   'an old boot 🥾',
@@ -31,6 +33,7 @@ function Dock() {
     label: 'Go fishing',
     promptHeight: 1.8,
     onInteract: () => {
+      audio.play('bloop')
       const first = unlock('fishing')
       if (!first) {
         const c = CATCHES[count.current++ % CATCHES.length]
@@ -77,6 +80,7 @@ function Dock() {
         <meshStandardMaterial color="#e63946" />
       </mesh>
       <Bench id="bench-dock" position={[length - 3.6, -0.9]} rotation={0} />
+      <Sparkles count={14} scale={[1.5, 0.6, 1.5]} position={[length + 0.2, -0.1, 0.6]} size={3} speed={0.4} color="#ffffff" />
     </group>
   )
 }
@@ -89,7 +93,7 @@ function Cave() {
   const openPanel = useStore((s) => s.openPanel)
   useInteractable('cave-crystal', {
     position: [cx, 0, cz],
-    radius: 1.8,
+    radius: 2.4,
     label: found ? 'Touch the crystal' : 'What is this?',
     promptHeight: 2,
     onInteract: () => {
@@ -133,9 +137,10 @@ function Cave() {
       </mesh>
       <mesh ref={crystal} position={[cx, 0.9, cz]}>
         <octahedronGeometry args={[0.45, 0]} />
-        <meshStandardMaterial color="#b388ff" emissive="#7b2ff7" emissiveIntensity={1.2} />
+        <meshStandardMaterial color="#b388ff" emissive="#9b5cff" emissiveIntensity={2} toneMapped={false} />
       </mesh>
       <pointLight position={[cx, 1.2, cz]} color="#b388ff" intensity={6} distance={5} />
+      <Sparkles count={found ? 10 : 30} scale={[2.2, 1.6, 2.2]} position={[cx, 1, cz]} size={found ? 2 : 4} speed={0.3} color="#d6b8ff" />
     </group>
   )
 }

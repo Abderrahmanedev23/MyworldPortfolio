@@ -1,6 +1,18 @@
 import { useState } from 'react'
 import { useStore, isTouch } from '../store'
 import { experience, profile, projects, skills } from '../content'
+import { audio } from '../audio'
+
+const HEADERS = {
+  about: ['🏠', '#ff8c6b'],
+  hobby: ['🖼', '#ff8fab'],
+  project: ['🔧', '#4f7cff'],
+  skills: ['🌱', '#5fb35a'],
+  milestone: ['🪧', '#e0a458'],
+  contact: ['✉', '#d62828'],
+  secret: ['★', '#f4b400'],
+  sign: ['⛲', '#2ec4b6'],
+}
 
 function Media({ image, video, title }) {
   if (video) {
@@ -237,10 +249,19 @@ export function Panel() {
   const panel = useStore((s) => s.panel)
   const closePanel = useStore((s) => s.closePanel)
   if (!panel) return null
+  const close = () => {
+    audio.play('close')
+    closePanel()
+  }
+  const [icon, color] = HEADERS[panel.kind] ?? HEADERS.sign
+  const accent = panel.kind === 'project' ? projects[panel.data ?? 0]?.color ?? color : color
   return (
-    <div className="panel-wrap" onPointerDown={(e) => e.target === e.currentTarget && closePanel()}>
-      <section className="panel" role="dialog" aria-modal="true">
-        <button className="close" onClick={closePanel} aria-label="Close">
+    <div className="panel-wrap" onPointerDown={(e) => e.target === e.currentTarget && close()}>
+      <section className="panel" role="dialog" aria-modal="true" style={{ '--accent': accent }}>
+        <div className="panel-band">
+          <span className="panel-icon">{icon}</span>
+        </div>
+        <button className="icon-btn close" onClick={close} aria-label="Close">
           ✕
         </button>
         <div className="panel-body">

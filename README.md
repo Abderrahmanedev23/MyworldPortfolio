@@ -1,10 +1,11 @@
 # My World — a 3D explorable portfolio
 
-A small, cozy low-poly island where every building is a piece of the portfolio.
+A small, cozy island in the style of Animal Crossing, where every building is a piece of the portfolio.
 Walk around as a mini-me, talk to the locals, find the secrets.
 
-Built with **React Three Fiber**, **Rapier** physics, **Drei** and **Vite**. No 3D model
-files yet: everything is made from code primitives, so it loads fast and is easy to swap later.
+Built with **React Three Fiber**, **Rapier** physics, **Drei**, **postprocessing** and **Vite**.
+There are no 3D model or audio files: the world, shaders, music and sound effects are all generated in code,
+so it loads fast and works offline.
 
 ## Run it
 
@@ -38,7 +39,11 @@ Deploy: import the repo on Vercel (framework preset "Vite"). `vercel.json` is in
 | Interact | E / Enter | ✋ button or tap the prompt |
 | Wave | R | — |
 | Camera | drag + scroll wheel | drag + pinch |
-| Close panel | Esc / E | ✕ |
+| Map / fast travel | M | 🗺 button |
+| Pause / settings | Esc / P | ⏸ button |
+
+Gamepads work too: left stick to move, right stick for the camera, A to jump, X/B to interact,
+Y to wave, Start to pause, View/Select for the map.
 
 ## The map
 
@@ -52,26 +57,38 @@ Deploy: import the repo on Vercel (framework preset "Vite"). `vercel.json` is in
 | Radio tower + mailbox (Contact) | north | `profile.json → contact` |
 | Secrets: rooftop star (climb the crates), crystal cave, fishing dock, football goal, falling in the sea, visiting every zone | around | `secrets.json` |
 
-Also: real-time day/night cycle (local clock, lamps at night), clouds, birds, a cat that
-follows you, footprints on the sand, NPCs with one-liners, generated ambient sound (🔈 button),
-HD/SD quality toggle, and a plain **classic site** at `#/classic` for recruiters and SEO.
+**Look and feel**
+- Cozy rendering: soft ambient occlusion, bloom, neutral tone mapping, a vignette, procedural environment lighting,
+  stylized water with shore foam, wind-blown grass that parts around you, round trees, blossom trees and bushes.
+- Real-time day/night cycle on the visitor's clock: lamps, fireflies, stars, and a lantern glow around the player at night.
+- Particles: dust when running or landing, falling petals, sparkles on undiscovered secrets.
+- Generative lo-fi music, footsteps that sound different on grass, sand, stone and wood, NPC voice blips, UI sounds.
+
+**Game UI**
+- Loading screen with tips, then a title screen over a slow fly-around of the island.
+- HUD: player card, quest tracker (places explored + secrets), a minimap that rotates with the camera, and zone titles when you enter an area.
+- RPG dialogue boxes with portraits and a typewriter effect, a map screen with fast travel, and a pause menu with
+  settings (graphics Low/Medium/High, music and effects volume, camera sensitivity), controls and progress.
+- Quality presets, and automatic downgrading when the frame rate drops (production builds).
+- A plain **classic site** at `#/classic` for recruiters and SEO.
 
 ## Make it yours
 
 All content lives in `src/content/*.json`. Booths, plants and signposts are generated from it,
 so you never need to touch 3D code to update the portfolio:
 
-- `profile.json`: name, role, bio, hobbies, NPC lines, contact, and **avatar colours** (skin, hair, hoodie, glasses…)
+- `profile.json`: name, role, bio, hobbies, NPC conversations (`npcs`), contact, and **avatar colours** (skin, hair, hoodie, glasses…)
 - `projects.json`: `image` takes an image URL, `video` takes a YouTube `/embed/` URL or an mp4
 - `skills.json`: `level` from 1 to 5
 - `experience.json`: in chronological order
 - `secrets.json`: titles and texts of the achievements
 
-Zone positions live in `src/world/layout.js`.
+Zone positions, area names (for zone titles and the map) and NPCs live in `src/world/layout.js`.
 
 ### Testing tips
 
 - `?hour=21` in the URL forces the time of day.
+- In dev mode the automatic quality downgrade is off; pick a preset in the pause menu.
 - In dev mode, `window.__teleport(x, z)` moves the player.
 
 ## Next steps (art pass)
