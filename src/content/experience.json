@@ -1,0 +1,6 @@
+[
+  { "year": "2019", "title": "Started coding", "place": "Self-taught", "text": "Wrote my first lines of HTML and never stopped." },
+  { "year": "2021", "title": "Computer Science studies", "place": "Your University", "text": "Edit experience.json — one signpost per entry, in order." },
+  { "year": "2023", "title": "Junior Developer", "place": "Company A", "text": "What you did and what you learned." },
+  { "year": "2025", "title": "Developer", "place": "Company B", "text": "Your current role and biggest achievement." }
+]

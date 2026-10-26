@@ -1,0 +1,11 @@
+[
+  { "name": "JavaScript", "level": 5, "category": "Language" },
+  { "name": "React", "level": 5, "category": "Frontend" },
+  { "name": "TypeScript", "level": 4, "category": "Language" },
+  { "name": "Node.js", "level": 4, "category": "Backend" },
+  { "name": "Three.js", "level": 3, "category": "3D" },
+  { "name": "CSS", "level": 4, "category": "Frontend" },
+  { "name": "SQL", "level": 3, "category": "Backend" },
+  { "name": "Git", "level": 4, "category": "Tools" },
+  { "name": "Blender", "level": 2, "category": "3D" }
+]

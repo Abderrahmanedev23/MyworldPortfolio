@@ -1,0 +1,46 @@
+[
+  {
+    "id": "my-world",
+    "title": "My World Portfolio",
+    "summary": "This island! A 3D explorable portfolio built with React Three Fiber and Rapier.",
+    "description": "Walk around, talk to the locals, find the secrets. Every zone is driven by JSON content so it is easy to update.",
+    "tags": ["React", "Three.js", "R3F", "Rapier"],
+    "color": "#4f7cff",
+    "image": "",
+    "video": "",
+    "links": [{ "label": "Source", "url": "https://github.com/abderrahmanedev23/myworldportfolio" }]
+  },
+  {
+    "id": "project-two",
+    "title": "Project Two",
+    "summary": "A short one-line summary of the project.",
+    "description": "Longer description: the problem, what you built, your role and the result. Add an image URL or a YouTube embed URL in projects.json.",
+    "tags": ["TypeScript", "Node.js"],
+    "color": "#ff8c42",
+    "image": "",
+    "video": "",
+    "links": [{ "label": "Live demo", "url": "https://example.com" }]
+  },
+  {
+    "id": "project-three",
+    "title": "Project Three",
+    "summary": "Another project worth showing off.",
+    "description": "Describe it here.",
+    "tags": ["Design", "Figma"],
+    "color": "#2ec4b6",
+    "image": "",
+    "video": "",
+    "links": []
+  },
+  {
+    "id": "project-four",
+    "title": "Project Four",
+    "summary": "One more booth in the gallery.",
+    "description": "Booths are generated automatically for every entry in projects.json.",
+    "tags": ["Python"],
+    "color": "#e71d36",
+    "image": "",
+    "video": "",
+    "links": []
+  }
+]

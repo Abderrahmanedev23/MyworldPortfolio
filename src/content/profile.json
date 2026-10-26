@@ -1,0 +1,36 @@
+{
+  "name": "Abderrahmane",
+  "role": "Developer",
+  "tagline": "I build things for the web — welcome to my little world.",
+  "location": "Earth",
+  "bio": [
+    "Hi! I'm Abderrahmane. This island is my portfolio: every building tells a piece of my story.",
+    "Replace this text in src/content/profile.json with your own bio — who you are, what you love building, and what you're looking for next."
+  ],
+  "avatar": {
+    "skin": "#f1c7a1",
+    "hair": "#2b1d14",
+    "hoodie": "#4f7cff",
+    "pants": "#2d3142",
+    "shoes": "#f4f4f4",
+    "glasses": true
+  },
+  "hobbies": [
+    { "id": "music", "title": "Music", "text": "A frame for a hobby. Edit hobbies in profile.json.", "color": "#ff8fab" },
+    { "id": "travel", "title": "Travel", "text": "Places I've been and want to go.", "color": "#7bdff2" },
+    { "id": "games", "title": "Games", "text": "Games that inspired this very portfolio.", "color": "#b8f2a1" }
+  ],
+  "npcLines": [
+    "Abderrahmane once fixed a bug by deleting a single semicolon. We still talk about it.",
+    "Have you checked the workshop? The projects are over there!",
+    "They say there's something shiny on top of the workshop roof...",
+    "I heard the fish near the dock are very picky."
+  ],
+  "contact": {
+    "email": "m.abderrahmane.dev@gmail.com",
+    "socials": [
+      { "label": "GitHub", "url": "https://github.com/abderrahmanedev23" },
+      { "label": "LinkedIn", "url": "https://www.linkedin.com/" }
+    ]
+  }
+}
