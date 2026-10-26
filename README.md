@@ -58,6 +58,8 @@ Y to wave, Start to pause, View/Select for the map.
 | Secrets: rooftop star (climb the crates), crystal cave, fishing dock, football goal, falling in the sea, visiting every zone | around | `secrets.json` |
 
 **Things to do**
+- **Skydive in**: pressing Start plays a short cinematic: a seaplane trailing a welcome banner flies over, you jump,
+  open a parachute and land on the plaza (Skip button, or Esc / Space / E).
 - **Swim**: walk off the beach or jump off the dock. Swim back to the sand or the dock to climb out
   (a current pushes you back if you go too far out).
 - **Fish**: stand on the beach or at the end of the dock and press E. Wait for the nibbles, then press E the
@@ -108,7 +110,7 @@ Zone positions, area names (for zone titles and the map) and NPCs live in `src/w
 
 ### Testing tips
 
-- `?hour=21` in the URL forces the time of day, `?weather=rain` (or `clear` / `blossom`) the weather.
+- `?hour=21` in the URL forces the time of day, `?weather=rain` (or `clear` / `blossom`) the weather, `?introSpeed=0.2` slows the intro down.
 - In dev mode the automatic quality downgrade is off; pick a preset in the pause menu.
 - In dev mode, `window.__teleport(x, z)` moves the player.
 

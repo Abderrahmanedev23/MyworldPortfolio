@@ -81,7 +81,11 @@ export const useStore = create((set, get) => ({
   phase: 'loading',
   ready: false,
   setReady: () => set({ ready: true }),
-  start: () => set({ phase: 'playing' }),
+  start: () => set({ phase: 'playing', intro: true }),
+
+  // opening cinematic (skydive onto the plaza)
+  intro: false,
+  endIntro: () => set({ intro: false }),
 
   settings: load(SETTINGS_KEY, DEFAULT_SETTINGS),
   setSetting: (key, value) => {
@@ -201,7 +205,7 @@ export const useStore = create((set, get) => ({
 /** Is gameplay blocked by a UI layer (panel, dialogue, menu, title)? */
 export function isBusy() {
   const s = useStore.getState()
-  return s.phase !== 'playing' || !!s.panel || !!s.dialogue || !!s.menu || !!s.fishing || !!s.tour || s.photo
+  return s.phase !== 'playing' || s.intro || !!s.panel || !!s.dialogue || !!s.menu || !!s.fishing || !!s.tour || s.photo
 }
 
 if (import.meta.env.DEV && typeof window !== 'undefined') window.__store = useStore

@@ -4,6 +4,7 @@ import { MathUtils, Vector3 } from 'three'
 import { input } from '../input'
 import { playerState, useStore } from '../store'
 import { uniforms } from './shaders'
+import { introState } from './Intro'
 
 const desired = new Vector3()
 const look = new Vector3()
@@ -82,7 +83,11 @@ export function CameraRig() {
 
     const focus = panel?.focus ?? dialogue?.focus ?? tour?.focus
     let speed = 7
-    if (phase !== 'playing') {
+    if (introState.active) {
+      desired.copy(introState.cam)
+      look.copy(introState.look)
+      speed = 4
+    } else if (phase !== 'playing') {
       // title screen: slow orbit around the island
       const a = t * 0.06
       desired.set(Math.sin(a) * 34, 15 + Math.sin(t * 0.1) * 2, Math.cos(a) * 34)
@@ -125,7 +130,7 @@ export function CameraRig() {
 
     uniforms.uOccCam.value.copy(camera.position)
     uniforms.uOccTarget.value.set(p.x, p.y + 0.3, p.z)
-    uniforms.uOccRadius.value = focus || phase !== 'playing' || photo ? 0 : 1.6
+    uniforms.uOccRadius.value = focus || phase !== 'playing' || photo || introState.active ? 0 : 1.6
   })
 
   return null

@@ -106,7 +106,8 @@ export function pollGamepad() {
   const tapped = (i) => pressed(i) && !prevButtons[i]
   input.pad.run = pressed(5) || pressed(7) || pressed(10) // RB / RT / L3
   if (tapped(0)) {
-    if (useStore.getState().phase !== 'playing') window.dispatchEvent(new Event('game-start'))
+    if (useStore.getState().intro) window.dispatchEvent(new Event('intro-skip'))
+    else if (useStore.getState().phase !== 'playing') window.dispatchEvent(new Event('game-start'))
     else input.jump = true // A
   }
   if (tapped(2) || tapped(1)) interact() // X or B
@@ -127,6 +128,10 @@ export function useKeyboard() {
       const s = useStore.getState()
       if (s.phase === 'title' && !e.repeat) {
         window.dispatchEvent(new Event('game-start'))
+        return
+      }
+      if (s.intro) {
+        if (['Escape', 'Space', 'Enter', 'KeyE'].includes(e.code) && !e.repeat) window.dispatchEvent(new Event('intro-skip'))
         return
       }
       if (e.code === 'Escape' || e.code === 'KeyP') return back()

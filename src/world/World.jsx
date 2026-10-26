@@ -12,6 +12,7 @@ import { Fishing } from './Fishing'
 import { Seagulls } from './Seagulls'
 import { Butterflies, Crabs, Dolphins } from './Animals'
 import { Boat } from './Boat'
+import { Intro } from './Intro'
 import { Islet } from './zones/Islet'
 import { Rain, Rainbow, WeatherController } from './Weather'
 import { Effects } from './Effects'
@@ -103,6 +104,7 @@ export function World() {
         <WaterFx />
         <Fishing />
         <Boat />
+        <Intro />
         <Fireflies count={high ? 80 : 40} />
         <FallingLeaves count={high ? 70 : 35} />
         <Rain />

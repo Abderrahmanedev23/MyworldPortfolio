@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, useRapier } from '@react-three/rapier'
 import { MathUtils } from 'three'
 import { Character } from './Character'
+import { introState } from './Intro'
 import { Avatar } from './Avatar'
 import { getMoveInput, input, pollGamepad } from '../input'
 import { isBusy, playerState, useStore } from '../store'
@@ -104,6 +105,20 @@ export function Player() {
       rb.setTranslation({ x, y, z }, true)
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
       playerState.position.set(x, y, z)
+      return
+    }
+
+    // ---------------- opening cinematic (skydive) ----------------
+    visual.current.visible = !(introState.active && introState.hidden)
+    if (introState.active) {
+      const ip = introState.pos
+      rb.setGravityScale(0, true)
+      rb.setTranslation({ x: ip.x, y: ip.y, z: ip.z }, true)
+      rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      playerState.anim = introState.anim
+      playerState.facing = introState.facing
+      visual.current.rotation.y = introState.facing
+      playerState.position.copy(ip)
       return
     }
 

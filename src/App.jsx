@@ -72,6 +72,7 @@ function Game() {
   const menu = useStore((s) => s.menu)
   const fade = useStore((s) => s.fade)
   const photo = useStore((s) => s.photo)
+  const intro = useStore((s) => s.intro)
   const settings = useStore((s) => s.settings)
   const [, force] = useState(0)
   useKeyboard()
@@ -101,7 +102,8 @@ function Game() {
       audio.init()
       audio.play('open')
       useStore.getState().start()
-      if (e?.detail?.tour) setTimeout(startTour, 500)
+      // start the guided tour once the skydive intro has landed
+      if (e?.detail?.tour) window.addEventListener('intro-done', () => setTimeout(startTour, 400), { once: true })
     }
     window.addEventListener('game-start', start)
     return () => window.removeEventListener('game-start', start)
@@ -118,8 +120,17 @@ function Game() {
           <World />
         </Suspense>
       </WorldBoundary>
+      {phase === 'playing' && intro && (
+        <div className="cinema">
+          <div className="cinema-bar top" />
+          <div className="cinema-bar bottom" />
+          <button className="btn ghost light cinema-skip" onClick={() => window.dispatchEvent(new Event('intro-skip'))}>
+            Skip ⏭
+          </button>
+        </div>
+      )}
       {phase === 'playing' && photo && <PhotoMode />}
-      {phase === 'playing' && !photo && (
+      {phase === 'playing' && !photo && !intro && (
         <>
           <HUD />
           <Dialogue />

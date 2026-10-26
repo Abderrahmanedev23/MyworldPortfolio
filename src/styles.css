@@ -1936,3 +1936,39 @@ kbd {
     display: inline-block;
   }
 }
+
+/* ---------- intro cinematic ---------- */
+.cinema {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.cinema-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9vh;
+  background: #120f1c;
+  animation: bar-in 0.6s ease-out both;
+}
+.cinema-bar.top {
+  top: 0;
+  transform-origin: top;
+}
+.cinema-bar.bottom {
+  bottom: 0;
+  transform-origin: bottom;
+}
+.cinema-skip {
+  position: absolute;
+  right: 18px;
+  bottom: calc(9vh + 14px);
+  pointer-events: auto;
+  background: rgba(18, 15, 28, 0.45);
+  backdrop-filter: blur(4px);
+}
+@keyframes bar-in {
+  from {
+    transform: scaleY(0);
+  }
+}

@@ -9,6 +9,7 @@ let chirpTimer = null
 let night = false
 let rainGain = null
 let rainWanted = false
+let engine = null
 let volumes = { music: 0.45, sfx: 0.8, muted: false }
 
 const now = () => ctx.currentTime
@@ -179,6 +180,30 @@ export const audio = {
   setNight(v) {
     night = v
   },
+  /** Propeller drone for the intro plane; level 0..1. */
+  setEngine(level) {
+    if (!ctx) return
+    if (!engine) {
+      const o = ctx.createOscillator()
+      o.type = 'sawtooth'
+      o.frequency.value = 92
+      const lfo = ctx.createOscillator()
+      lfo.frequency.value = 22 // propeller "chop"
+      const lfoGain = ctx.createGain()
+      lfoGain.gain.value = 18
+      lfo.connect(lfoGain).connect(o.frequency)
+      const lp = ctx.createBiquadFilter()
+      lp.type = 'lowpass'
+      lp.frequency.value = 420
+      const g = ctx.createGain()
+      g.gain.value = 0
+      o.connect(lp).connect(g).connect(sfxBus)
+      o.start()
+      lfo.start()
+      engine = g
+    }
+    engine.gain.setTargetAtTime(level * 0.18, now(), 0.15)
+  },
   /** Soft rain loop, faded in and out. */
   setRain(on) {
     rainWanted = on
@@ -305,6 +330,13 @@ export const audio = {
         break
       case 'fail':
         ;[64, 60, 55].forEach((n, i) => tone({ freq: midi(n), t: t + i * 0.12, decay: 0.2, gain: 0.07, type: 'triangle' }))
+        break
+      case 'chute':
+        burst({ dur: 0.35, gain: 0.4, type: 'bandpass', freq: 600, sweepTo: 180, q: 0.7 })
+        tone({ freq: 140, to: 70, decay: 0.25, gain: 0.15 })
+        break
+      case 'wind':
+        burst({ dur: 1.2, gain: 0.25, type: 'bandpass', freq: 500, sweepTo: 1400, q: 0.6 })
         break
       case 'shutter':
         burst({ dur: 0.05, gain: 0.25, type: 'highpass', freq: 3000 })
